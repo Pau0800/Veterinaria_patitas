@@ -11,6 +11,11 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
+    "/turnos/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/turnos/page.js"
+    ],
     "/clientes/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -20,16 +25,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/mascotas/page.js"
-    ],
-    "/turnos/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/turnos/page.js"
-    ],
-    "/farmacia/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/farmacia/page.js"
     ],
     "/historias-clinicas/page": [
       "static/chunks/webpack.js",
@@ -45,6 +40,11 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/internaciones/page.js"
+    ],
+    "/farmacia/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/farmacia/page.js"
     ]
   }
 }
