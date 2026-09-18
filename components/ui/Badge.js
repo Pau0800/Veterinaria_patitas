@@ -8,7 +8,7 @@ export function Badge({ children, variant = "default", className }) {
     warning: "bg-amberGold-100 text-amberGold-600 border-amberGold-500/30",
     danger: "bg-red-100 text-red-700 border-red-300",
     primary: "bg-autumn-500 text-white border-autumn-600",
-    info: "bg-amber-100 text-amber-800 border-amber-300",
+    info: "bg-blue-100 text-blue-700 border-blue-300",
   };
 
   return (

@@ -16,35 +16,10 @@
       "static/chunks/main-app.js",
       "static/chunks/app/turnos/page.js"
     ],
-    "/clientes/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/clientes/page.js"
-    ],
-    "/mascotas/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/mascotas/page.js"
-    ],
     "/historias-clinicas/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/historias-clinicas/page.js"
-    ],
-    "/vacunas/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/vacunas/page.js"
-    ],
-    "/internaciones/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/internaciones/page.js"
-    ],
-    "/farmacia/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/farmacia/page.js"
     ]
   }
 }

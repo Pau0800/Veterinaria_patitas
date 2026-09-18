@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS public.appointments (
   appointment_date DATE NOT NULL,
   appointment_time TIME NOT NULL,
   reason TEXT NOT NULL,
-  status VARCHAR(30) DEFAULT 'solicitado' CHECK (status IN ('solicitado', 'confirmado', 'reprogramado', 'cancelado', 'finalizado')),
+  status VARCHAR(30) DEFAULT 'solicitado' CHECK (status IN ('solicitado', 'confirmado', 'reprogramado', 'cancelado')),
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

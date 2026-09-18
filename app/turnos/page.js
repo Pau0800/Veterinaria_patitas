@@ -18,10 +18,11 @@ import {
   Clock,
   Filter,
   Calendar as CalendarIcon,
+  Pencil,
 } from "lucide-react";
 
 export default function AppointmentsPage() {
-  const { appointments, updateAppointmentStatus, addAppointment, currentRole, activeClientId } =
+  const { appointments, updateAppointmentStatus, updateAppointment, addAppointment, currentRole, activeClientId } =
     useApp();
 
   const [selectedVet, setSelectedVet] = useState("TODOS");
@@ -63,7 +64,7 @@ export default function AppointmentsPage() {
       case "solicitado":
         return <Badge variant="warning">Solicitado</Badge>;
       case "reprogramado":
-        return <Badge variant="default">Reprogramado</Badge>;
+        return <Badge variant="info">Reprogramado</Badge>;
       case "cancelado":
         return <Badge variant="danger">Cancelado</Badge>;
       default:
@@ -160,6 +161,17 @@ export default function AppointmentsPage() {
                 <Td>{getStatusBadge(appt.status)}</Td>
                 <Td className="text-right">
                   <div className="flex items-center justify-end space-x-1">
+                    <button
+                      onClick={() => {
+                        setEditingAppt(appt);
+                        setIsModalOpen(true);
+                      }}
+                      className="px-2 py-1 bg-autumn-100 text-autumn-700 hover:bg-autumn-200 rounded-md text-xs font-semibold transition-colors flex items-center space-x-1"
+                      title="Editar"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      <span className="hidden lg:inline">Editar</span>
+                    </button>
                     {appt.status !== "confirmado" && currentRole !== "Cliente" && (
                       <button
                         onClick={() => updateAppointmentStatus(appt.id, "confirmado")}
@@ -196,7 +208,7 @@ export default function AppointmentsPage() {
           setIsModalOpen(false);
           setEditingAppt(null);
         }}
-        onSubmit={(data) => addAppointment(data)}
+        onSubmit={(data) => (editingAppt ? updateAppointment(data) : addAppointment(data))}
         initialData={editingAppt}
       />
     </div>

@@ -9,6 +9,7 @@ import {
   INITIAL_VACCINES,
   INITIAL_HOSPITALIZATIONS,
   INITIAL_PHARMACY,
+  VETERINARIANS,
 } from "@/lib/mockData";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
@@ -161,6 +162,23 @@ export function AppProvider({ children }) {
     saveToStorage("vet_appointments", updated);
   };
 
+  const updateAppointment = (updatedAppointment) => {
+    const pet = pets.find((p) => p.id === updatedAppointment.pet_id);
+    const client = clients.find((c) => c.id === (updatedAppointment.client_id || pet?.owner_id));
+    const vet = updatedAppointment.vet_id
+      ? VETERINARIANS.find((v) => v.id === updatedAppointment.vet_id)
+      : null;
+    const item = {
+      ...updatedAppointment,
+      pet_name: pet ? pet.name : updatedAppointment.pet_name,
+      client_name: client ? client.full_name : updatedAppointment.client_name,
+      vet_name: vet ? vet.full_name : updatedAppointment.vet_name,
+    };
+    const updated = appointments.map((a) => (a.id === item.id ? item : a));
+    setAppointments(updated);
+    saveToStorage("vet_appointments", updated);
+  };
+
   // --- VACCINE ACTIONS ---
   const addVaccine = (newVaccine) => {
     const pet = pets.find((p) => p.id === newVaccine.pet_id);
@@ -263,6 +281,7 @@ export function AppProvider({ children }) {
         softDeletePet,
         addMedicalRecord,
         addAppointment,
+        updateAppointment,
         updateAppointmentStatus,
         addVaccine,
         addHospitalization,

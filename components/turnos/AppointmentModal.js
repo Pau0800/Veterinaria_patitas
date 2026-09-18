@@ -9,7 +9,7 @@ import { VETERINARIANS } from "@/lib/mockData";
 import { useApp } from "@/context/AppContext";
 
 export function AppointmentModal({ isOpen, onClose, onSubmit, initialData }) {
-  const { pets, clients, currentRole } = useApp();
+  const { pets, clients } = useApp();
 
   const [formData, setFormData] = useState({
     pet_id: "",
@@ -19,6 +19,7 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, initialData }) {
     appointment_time: "10:00",
     reason: "",
     notes: "",
+    status: "solicitado",
   });
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, initialData }) {
         appointment_time: "10:00",
         reason: "",
         notes: "",
+        status: "solicitado",
       });
     }
   }, [initialData, isOpen, pets, clients]);
@@ -48,7 +50,7 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, initialData }) {
       ...formData,
       vet_name: vet ? vet.full_name : "Veterinario Asignado",
       pet_name: pet ? pet.name : "Mascota",
-      status: initialData ? formData.status : currentRole === "Cliente" ? "solicitado" : "confirmado",
+      status: initialData ? formData.status : "solicitado",
     });
     onClose();
   };
@@ -132,6 +134,21 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, initialData }) {
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
         />
+
+        {initialData && (
+          <Select
+            label="Estado"
+            options={[
+              { value: "solicitado", label: "Solicitado" },
+              { value: "confirmado", label: "Confirmado" },
+              { value: "reprogramado", label: "Reprogramado" },
+              { value: "cancelado", label: "Cancelado" },
+            ]}
+            value={formData.status || "solicitado"}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+            required
+          />
+        )}
 
         <div className="flex justify-end space-x-3 pt-4 border-t border-autumn-100">
           <Button variant="outline" onClick={onClose}>
