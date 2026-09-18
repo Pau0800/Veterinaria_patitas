@@ -1,4 +1,4 @@
-// File: c:\Users\PC-1\Desktop\Veterinaria_anti\app\clientes\page.js
+// File: C:\Users\Pc\Downloads\veterinariapatitas\Veterinaria_patitas\app\clientes\page.js
 import * as entry from '../../../../app/clientes/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

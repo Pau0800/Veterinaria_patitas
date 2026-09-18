@@ -1,10 +1,10 @@
 {
-  "/clientes/page": "app/clientes/page.js",
   "/page": "app/page.js",
   "/turnos/page": "app/turnos/page.js",
+  "/clientes/page": "app/clientes/page.js",
   "/mascotas/page": "app/mascotas/page.js",
-  "/farmacia/page": "app/farmacia/page.js",
   "/historias-clinicas/page": "app/historias-clinicas/page.js",
+  "/vacunas/page": "app/vacunas/page.js",
   "/internaciones/page": "app/internaciones/page.js",
-  "/vacunas/page": "app/vacunas/page.js"
+  "/farmacia/page": "app/farmacia/page.js"
 }
