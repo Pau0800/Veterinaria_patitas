@@ -1,7 +1,8 @@
 {
-  "/turnos/page": "app/turnos/page.js",
-  "/historias-clinicas/page": "app/historias-clinicas/page.js",
   "/vacunas/page": "app/vacunas/page.js",
+  "/turnos/page": "app/turnos/page.js",
+  "/clientes/page": "app/clientes/page.js",
+  "/farmacia/page": "app/farmacia/page.js",
   "/mascotas/page": "app/mascotas/page.js",
-  "/internaciones/page": "app/internaciones/page.js"
+  "/page": "app/page.js"
 }
