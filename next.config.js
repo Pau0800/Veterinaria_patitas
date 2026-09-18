@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+/*hola */
 const nextConfig = {
   reactStrictMode: true,
   images: {
