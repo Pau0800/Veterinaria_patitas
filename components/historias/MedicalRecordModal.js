@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { VETERINARIANS } from "@/lib/mockData";
 
-export function MedicalRecordModal({ isOpen, onClose, onSubmit, pets = [] }) {
-  const [formData, setFormData] = useState({
+export function MedicalRecordModal({ isOpen, onClose, onSubmit, pets = [], defaultValues }) {
+  const getInitialFormData = () => ({
     pet_id: pets.length > 0 ? pets[0].id : "",
     vet_id: VETERINARIANS[0].id,
     type: "Consulta General",
@@ -18,7 +18,14 @@ export function MedicalRecordModal({ isOpen, onClose, onSubmit, pets = [] }) {
     treatment: "",
     medication_prescribed: "",
     record_date: new Date().toISOString().split("T")[0],
+    ...defaultValues,
   });
+
+  const [formData, setFormData] = useState(getInitialFormData);
+
+  useEffect(() => {
+    if (isOpen) setFormData(getInitialFormData());
+  }, [isOpen, defaultValues, pets]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -42,6 +49,7 @@ export function MedicalRecordModal({ isOpen, onClose, onSubmit, pets = [] }) {
   }));
 
   const typeOptions = [
+    { value: "", label: "Seleccionar tipo de registro" },
     { value: "Consulta General", label: "Consulta General" },
     { value: "Diagnóstico", label: "Diagnóstico" },
     { value: "Tratamiento", label: "Tratamiento" },

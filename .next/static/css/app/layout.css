@@ -617,6 +617,9 @@ video {
 .mb-6 {
   margin-bottom: 1.5rem;
 }
+.ml-auto {
+  margin-left: auto;
+}
 .mr-1 {
   margin-right: 0.25rem;
 }

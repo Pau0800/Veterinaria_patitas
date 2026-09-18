@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { MedicalTimeline } from "@/components/historias/MedicalTimeline";
 import { MedicalRecordModal } from "@/components/historias/MedicalRecordModal";
@@ -15,6 +15,23 @@ export default function MedicalRecordsPage() {
   const [selectedPetId, setSelectedPetId] = useState("TODAS");
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [defaultValues, setDefaultValues] = useState(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const turnoId = params.get("turnoId");
+
+    if (!turnoId) return;
+
+    setDefaultValues({
+      pet_id: params.get("mascotaId") || "",
+      vet_id: params.get("veterinarioId") || "",
+      type: "",
+      record_date: params.get("fecha") || new Date().toISOString().split("T")[0],
+      title: params.get("motivo") || "",
+    });
+    setIsModalOpen(true);
+  }, []);
 
   // Role Filtering
   const availablePets =
@@ -101,6 +118,7 @@ export default function MedicalRecordsPage() {
         onClose={() => setIsModalOpen(false)}
         onSubmit={(data) => addMedicalRecord(data)}
         pets={availablePets}
+        defaultValues={defaultValues}
       />
     </div>
   );

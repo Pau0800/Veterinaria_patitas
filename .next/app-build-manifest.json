@@ -11,15 +11,30 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
+    "/historias-clinicas/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/historias-clinicas/page.js"
+    ],
     "/turnos/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/turnos/page.js"
     ],
-    "/historias-clinicas/page": [
+    "/vacunas/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/historias-clinicas/page.js"
+      "static/chunks/app/vacunas/page.js"
+    ],
+    "/mascotas/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/mascotas/page.js"
+    ],
+    "/internaciones/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/internaciones/page.js"
     ]
   }
 }

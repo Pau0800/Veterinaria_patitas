@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { Table, Thead, Tbody, Tr, Th, Td } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
@@ -19,6 +20,7 @@ import {
   Filter,
   Calendar as CalendarIcon,
   Pencil,
+  FolderOpen,
 } from "lucide-react";
 
 export default function AppointmentsPage() {
@@ -30,6 +32,18 @@ export default function AppointmentsPage() {
   const [selectedStatus, setSelectedStatus] = useState("TODOS");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAppt, setEditingAppt] = useState(null);
+  const router = useRouter();
+
+  const openMedicalRecord = (appt) => {
+    const params = new URLSearchParams({
+      turnoId: appt.id,
+      mascotaId: appt.pet_id,
+      veterinarioId: appt.vet_id,
+      fecha: appt.appointment_date,
+      motivo: appt.reason,
+    });
+    router.push(`/historias-clinicas?${params.toString()}`);
+  };
 
   // Role Filtering
   const baseAppointments =
@@ -130,12 +144,13 @@ export default function AppointmentsPage() {
             <Th>Motivo / Observaciones</Th>
             <Th>Estado</Th>
             <Th className="text-right">Acciones</Th>
+            <Th className="text-right">Historia Clínica</Th>
           </Tr>
         </Thead>
         <Tbody>
           {filteredAppointments.length === 0 ? (
             <Tr>
-              <Td colSpan={7} className="text-center py-8 text-autumn-800/60">
+              <Td colSpan={8} className="text-center py-8 text-autumn-800/60">
                 No hay turnos registrados que coincidan con los filtros.
               </Td>
             </Tr>
@@ -194,6 +209,16 @@ export default function AppointmentsPage() {
                       </button>
                     )}
                   </div>
+                </Td>
+                <Td className="text-right">
+                  <button
+                    onClick={() => openMedicalRecord(appt)}
+                    className="px-2 py-1 bg-autumn-100 text-autumn-700 hover:bg-autumn-200 rounded-md text-xs font-semibold transition-colors flex items-center justify-end space-x-1 ml-auto"
+                    title="Cargar Historia Clínica"
+                  >
+                    <FolderOpen className="w-3.5 h-3.5" />
+                    <span className="hidden lg:inline">Ver Historia</span>
+                  </button>
                 </Td>
               </Tr>
             ))
