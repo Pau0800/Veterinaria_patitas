@@ -1,3 +1,4 @@
 {
+  "/api/ia/route": "app/api/ia/route.js",
   "/page": "app/page.js"
 }
