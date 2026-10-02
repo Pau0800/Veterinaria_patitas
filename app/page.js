@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
+import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
@@ -21,260 +22,340 @@ import {
   Clock,
   XCircle,
   PlusCircle,
+  ArrowRight,
+  Sparkles,
 } from "lucide-react";
-import Link from "next/link";
 import { formatDate } from "@/lib/utils";
+
+/**
+ * Mapa de configuración de estados de turnos para optimizar el renderizado del Badge.
+ */
+const STATUS_BADGE_CONFIG = {
+  confirmado: { variant: "success", label: "Confirmado" },
+  solicitado: { variant: "warning", label: "Solicitado" },
+  reprogramado: { variant: "default", label: "Reprogramado" },
+  cancelado: { variant: "danger", label: "Cancelado" },
+};
 
 export default function DashboardPage() {
   const {
-    currentRole,
-    clients,
-    pets,
-    appointments,
-    vaccines,
-    hospitalizations,
-    pharmacy,
-    activeClientId,
+    currentRole = "Administrador",
+    clients = [],
+    pets = [],
+    appointments = [],
+    vaccines = [],
+    hospitalizations = [],
+    pharmacy = [],
+    activeClientId = null,
     updateAppointmentStatus,
     addAppointment,
   } = useApp();
 
   const [isApptModalOpen, setIsApptModalOpen] = useState(false);
 
-  // Role Filtering logic
-  const filteredPets =
-    currentRole === "Cliente"
+  // ---------------------------------------------------------------------------
+  // MEMOIZACIÓN DE FILTROS Y CÁLCULOS
+  // Evita re-ejecutar filtros costosos en cada renderizado si los datos no cambiaron.
+  // ---------------------------------------------------------------------------
+  const isClientRole = currentRole === "Cliente";
+
+  const filteredPets = useMemo(() => {
+    return isClientRole
       ? pets.filter((p) => p.owner_id === activeClientId)
       : pets.filter((p) => p.status === "activo");
+  }, [pets, isClientRole, activeClientId]);
 
-  const filteredClients = clients.filter((c) => c.status === "activo");
+  const filteredClients = useMemo(() => {
+    return clients.filter((c) => c.status === "activo");
+  }, [clients]);
 
-  const filteredAppointments =
-    currentRole === "Cliente"
+  const filteredAppointments = useMemo(() => {
+    return isClientRole
       ? appointments.filter((a) => a.client_id === activeClientId)
       : appointments;
+  }, [appointments, isClientRole, activeClientId]);
 
-  const pendingVaccines = vaccines.filter((v) => v.status === "pendiente");
-  const activeHospitalizations = hospitalizations.filter((h) => h.status === "activa");
-  const lowStockItems = pharmacy.filter((p) => p.stock <= p.min_stock);
+  const pendingVaccines = useMemo(() => {
+    return vaccines.filter((v) => v.status === "pendiente");
+  }, [vaccines]);
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "confirmado":
-        return <Badge variant="success">Confirmado</Badge>;
-      case "solicitado":
-        return <Badge variant="warning">Solicitado</Badge>;
-      case "reprogramado":
-        return <Badge variant="default">Reprogramado</Badge>;
-      case "cancelado":
-        return <Badge variant="danger">Cancelado</Badge>;
-      default:
-        return <Badge variant="default">{status}</Badge>;
-    }
-  };
+  const activeHospitalizations = useMemo(() => {
+    return hospitalizations.filter((h) => h.status === "activa");
+  }, [hospitalizations]);
+
+  const lowStockItems = useMemo(() => {
+    return pharmacy.filter((p) => Number(p.stock) <= Number(p.min_stock));
+  }, [pharmacy]);
+
+  const upcomingAppointments = useMemo(() => {
+    return filteredAppointments.slice(0, 5);
+  }, [filteredAppointments]);
+
+  // Renderizado optimizado para los Badges de Estado
+  const renderStatusBadge = useCallback((status) => {
+    const config = STATUS_BADGE_CONFIG[status] || {
+      variant: "default",
+      label: status || "Sin Estado",
+    };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  }, []);
+
+  // Manejo seguro del envío del modal
+  const handleAppointmentSubmit = useCallback(
+    async (newAppt) => {
+      if (typeof addAppointment === "function") {
+        await addAppointment(newAppt);
+      }
+      setIsApptModalOpen(false);
+    },
+    [addAppointment]
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Banner de Bienvenida */}
-      <div className="bg-gradient-to-r from-autumn-600 via-autumn-500 to-amberGold-600 rounded-2xl p-6 lg:p-8 text-white shadow-autumn-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-            Vista {currentRole}
-          </span>
-          <h2 className="text-2xl lg:text-3xl font-extrabold tracking-tight">
-            ¡Bienvenido a VetOtoño!
-          </h2>
-          <p className="text-white/90 text-sm max-w-xl">
-            {currentRole === "Cliente"
-              ? "Consulta el estado de salud, próximas vacunas y turnos de tus mascotas en un solo lugar."
-              : "Gestión unificada de pacientes, agenda médica, historias clínicas e inventario de farmacia."}
-          </p>
+    <div className="space-y-6 animate-fade-in">
+      {/* BANNER DE BIENVENIDA */}
+      <section
+        aria-label="Encabezado de Bienvenida"
+        className="relative overflow-hidden bg-gradient-to-r from-autumn-700 via-autumn-600 to-amberGold-600 rounded-2xl p-6 lg:p-8 text-white shadow-xl shadow-autumn-900/10 transition-all duration-300"
+      >
+        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase text-autumn-50">
+              <Sparkles className="w-3.5 h-3.5 text-amberGold-300" />
+              <span>Vista {currentRole}</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white">
+              ¡Bienvenido a VetOtoño!
+            </h1>
+            <p className="text-autumn-100/90 text-sm sm:text-base leading-relaxed">
+              {isClientRole
+                ? "Consulta el estado de salud, próximas vacunas y turnos de tus mascotas en un solo lugar de manera rápida y transparente."
+                : "Plataforma de gestión unificada para el control de pacientes, agenda médica, historias clínicas e inventario de farmacia."}
+            </p>
+          </div>
+
+          <Button
+            onClick={() => setIsApptModalOpen(true)}
+            variant="secondary"
+            size="lg"
+            className="w-full sm:w-auto bg-white text-autumn-900 hover:bg-autumn-50 hover:text-autumn-950 shadow-lg hover:shadow-xl transition-all duration-200 font-bold shrink-0 border border-white/20 focus:ring-4 focus:ring-white/30"
+          >
+            <PlusCircle className="w-5 h-5 text-autumn-600 transition-transform group-hover:scale-110" />
+            <span>Solicitar Cita</span>
+          </Button>
         </div>
+      </section>
 
-        <Button
-          onClick={() => setIsApptModalOpen(true)}
-          variant="secondary"
-          className="bg-white text-autumn-900 hover:bg-autumn-50 shadow-md font-bold"
-        >
-          <PlusCircle className="w-5 h-5 text-autumn-500" />
-          <span>Solicitar Cita</span>
-        </Button>
-      </div>
+      {/* TARJETAS KPI DE ESTADÍSTICAS */}
+      <section aria-label="Métricas Principales">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+          <StatsCard
+            title="Total Clientes"
+            value={filteredClients.length}
+            icon={Users}
+            description="Dueños activos registrados"
+            variant="primary"
+          />
+          <StatsCard
+            title="Total Mascotas"
+            value={filteredPets.length}
+            icon={Dog}
+            description="Fichas clínicas activas"
+            variant="amber"
+          />
+          <StatsCard
+            title="Turnos Agendados"
+            value={filteredAppointments.length}
+            icon={CalendarCheck}
+            description="Citas registradas"
+            variant="sage"
+          />
+          <StatsCard
+            title="Vacunas Pendientes"
+            value={pendingVaccines.length}
+            icon={Syringe}
+            description="Próximas a vencer o vencidas"
+            variant="amber"
+          />
+          <StatsCard
+            title="Internaciones Activas"
+            value={activeHospitalizations.length}
+            icon={BedDouble}
+            description="Pacientes en observación"
+            variant="danger"
+          />
+          <StatsCard
+            title="Stock Bajo Farmacia"
+            value={lowStockItems.length}
+            icon={Pill}
+            description="Medicamentos con stock crítico"
+            variant="danger"
+          />
+        </div>
+      </section>
 
-      {/* Tarjetas KPI de Estadísticas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatsCard
-          title="Total Clientes"
-          value={filteredClients.length}
-          icon={Users}
-          description="Dueños activos registrados"
-          variant="primary"
-        />
-        <StatsCard
-          title="Total Mascotas"
-          value={filteredPets.length}
-          icon={Dog}
-          description="Fichas clínicas activas"
-          variant="amber"
-        />
-        <StatsCard
-          title="Turnos Agendados"
-          value={filteredAppointments.length}
-          icon={CalendarCheck}
-          description="Citas registradas"
-          variant="sage"
-        />
-        <StatsCard
-          title="Vacunas Pendientes"
-          value={pendingVaccines.length}
-          icon={Syringe}
-          description="Próximas a vencer o vencidas"
-          variant="amber"
-        />
-        <StatsCard
-          title="Internaciones Activas"
-          value={activeHospitalizations.length}
-          icon={BedDouble}
-          description="Pacientes en observación"
-          variant="danger"
-        />
-        <StatsCard
-          title="Stock Bajo Farmacia"
-          value={lowStockItems.length}
-          icon={Pill}
-          description="Medicamentos con stock crítico"
-          variant="danger"
-        />
-      </div>
-
-      {/* Alertas Críticas (Bajo Stock y Vacunas) */}
-      {(lowStockItems.length > 0 || pendingVaccines.length > 0) && currentRole !== "Cliente" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* ALERTAS CRÍTICAS (BAJO STOCK Y VACUNAS) */}
+      {(lowStockItems.length > 0 || pendingVaccines.length > 0) && !isClientRole && (
+        <section aria-label="Alertas del Sistema" className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {lowStockItems.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start space-x-3 text-red-900">
-              <AlertTriangle className="w-6 h-6 text-red-600 shrink-0 mt-0.5" />
-              <div className="flex-1 text-xs">
-                <strong className="font-bold text-sm block">Alerta de Insumos Críticos:</strong>
-                <p>
-                  Hay {lowStockItems.length} medicamento(s) que han alcanzado el umbral mínimo (ej:{" "}
-                  {lowStockItems[0].name}).
+            <div className="bg-red-50/80 border border-red-200/80 rounded-xl p-4.5 flex items-start space-x-3.5 text-red-950 shadow-sm transition-all hover:shadow-md">
+              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5 animate-pulse" />
+              <div className="flex-1 text-xs space-y-1">
+                <strong className="font-bold text-sm text-red-900 block">
+                  Alerta de Insumos Críticos
+                </strong>
+                <p className="text-red-800/90 leading-relaxed">
+                  Hay <span className="font-semibold">{lowStockItems.length}</span> medicamento(s) que han alcanzado el umbral mínimo
+                  {lowStockItems[0]?.name ? ` (ej: ${lowStockItems[0].name})` : ""}.
                 </p>
-                <Link href="/farmacia" className="text-red-700 font-bold underline mt-1 inline-block">
-                  Revisar Farmacia &rarr;
+                <Link
+                  href="/farmacia"
+                  className="inline-flex items-center gap-1 text-red-700 hover:text-red-900 font-bold underline underline-offset-2 mt-1 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400 rounded"
+                >
+                  <span>Revisar Farmacia</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
           )}
 
           {pendingVaccines.length > 0 && (
-            <div className="bg-amberGold-50 border border-amberGold-200 rounded-xl p-4 flex items-start space-x-3 text-amberGold-900">
-              <Clock className="w-6 h-6 text-amberGold-600 shrink-0 mt-0.5" />
-              <div className="flex-1 text-xs">
-                <strong className="font-bold text-sm block">Recordatorios de Vacunación:</strong>
-                <p>
-                  Existe(n) {pendingVaccines.length} vacuna(s) de mascotas con fecha límite cercana.
+            <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl p-4.5 flex items-start space-x-3.5 text-amber-950 shadow-sm transition-all hover:shadow-md">
+              <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex-1 text-xs space-y-1">
+                <strong className="font-bold text-sm text-amber-900 block">
+                  Recordatorios de Vacunación
+                </strong>
+                <p className="text-amber-800/90 leading-relaxed">
+                  Existe(n) <span className="font-semibold">{pendingVaccines.length}</span> vacuna(s) de mascotas con fecha límite cercana.
                 </p>
-                <Link href="/vacunas" className="text-amberGold-700 font-bold underline mt-1 inline-block">
-                  Ver Vacunas &rarr;
+                <Link
+                  href="/vacunas"
+                  className="inline-flex items-center gap-1 text-amber-800 hover:text-amber-950 font-bold underline underline-offset-2 mt-1 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-400 rounded"
+                >
+                  <span>Ver Vacunas</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
           )}
-        </div>
+        </section>
       )}
 
-      {/* Gráficos de Estadísticas */}
-      {currentRole !== "Cliente" && (
-        <DashboardCharts
-          appointments={appointments}
-          vaccines={vaccines}
-          pharmacy={pharmacy}
-        />
+      {/* GRÁFICOS DE ESTADÍSTICAS */}
+      {!isClientRole && (
+        <section aria-label="Visualización de Datos">
+          <DashboardCharts
+            appointments={appointments}
+            vaccines={vaccines}
+            pharmacy={pharmacy}
+          />
+        </section>
       )}
 
-      {/* Tabla de Turnos Recientes */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between w-full">
-            <CardTitle>Agenda de Turnos Próximos</CardTitle>
-            <Link href="/turnos">
-              <Button size="sm" variant="outline">
-                Ver Todos los Turnos
-              </Button>
-            </Link>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>Mascota</Th>
-                <Th>Dueño</Th>
-                <Th>Veterinario</Th>
-                <Th>Fecha y Hora</Th>
-                <Th>Motivo</Th>
-                <Th>Estado</Th>
-                {currentRole !== "Cliente" && <Th className="text-right">Acciones</Th>}
-              </Tr>
-            </Thead>
-            <Tbody>
-              {filteredAppointments.length === 0 ? (
+      {/* TABLA DE TURNOS RECIENTES */}
+      <section aria-label="Agenda Próxima">
+        <Card className="border border-autumn-200/60 shadow-sm rounded-xl overflow-hidden">
+          <CardHeader className="bg-autumn-50/50 border-b border-autumn-100 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+              <CardTitle className="text-lg font-bold text-autumn-950">
+                Agenda de Turnos Próximos
+              </CardTitle>
+              <Link href="/turnos" passHref>
+                <Button size="sm" variant="outline" className="border-autumn-300 text-autumn-800 hover:bg-autumn-100/50">
+                  <span>Ver Todos los Turnos</span>
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0 overflow-x-auto">
+            <Table>
+              <Thead className="bg-autumn-100/40">
                 <Tr>
-                  <Td colSpan={7} className="text-center py-6 text-autumn-800/60">
-                    No hay turnos agendados por el momento.
-                  </Td>
+                  <Th className="text-left font-semibold text-autumn-900">Mascota</Th>
+                  <Th className="text-left font-semibold text-autumn-900">Dueño</Th>
+                  <Th className="text-left font-semibold text-autumn-900">Veterinario</Th>
+                  <Th className="text-left font-semibold text-autumn-900">Fecha y Hora</Th>
+                  <Th className="text-left font-semibold text-autumn-900">Motivo</Th>
+                  <Th className="text-left font-semibold text-autumn-900">Estado</Th>
+                  {!isClientRole && <Th className="text-right font-semibold text-autumn-900">Acciones</Th>}
                 </Tr>
-              ) : (
-                filteredAppointments.slice(0, 5).map((appt) => (
-                  <Tr key={appt.id}>
-                    <Td className="font-bold text-autumn-900">{appt.pet_name}</Td>
-                    <Td>{appt.client_name}</Td>
-                    <Td>{appt.vet_name}</Td>
-                    <Td>
-                      <div className="text-xs">
-                        <span className="font-semibold block">{formatDate(appt.appointment_date)}</span>
-                        <span className="text-autumn-800/60">{appt.appointment_time} hs</span>
+              </Thead>
+              <Tbody className="divide-y divide-autumn-100/60">
+                {upcomingAppointments.length === 0 ? (
+                  <Tr>
+                    <Td colSpan={!isClientRole ? 7 : 6} className="text-center py-10 text-autumn-800/70">
+                      <div className="flex flex-col items-center justify-center space-y-2">
+                        <CalendarCheck className="w-8 h-8 text-autumn-400 stroke-1" />
+                        <p className="text-sm font-medium">No hay turnos agendados por el momento.</p>
                       </div>
                     </Td>
-                    <Td className="max-w-xs truncate">{appt.reason}</Td>
-                    <Td>{getStatusBadge(appt.status)}</Td>
-                    {currentRole !== "Cliente" && (
-                      <Td className="text-right">
-                        <div className="flex items-center justify-end space-x-1">
-                          {appt.status !== "confirmado" && (
-                            <button
-                              onClick={() => updateAppointmentStatus(appt.id, "confirmado")}
-                              className="p-1.5 text-sage-600 hover:bg-sage-50 rounded-md transition-colors"
-                              title="Confirmar Turno"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </button>
-                          )}
-                          {appt.status !== "cancelado" && (
-                            <button
-                              onClick={() => updateAppointmentStatus(appt.id, "cancelado")}
-                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                              title="Cancelar Turno"
-                            >
-                              <XCircle className="w-4 h-4" />
-                            </button>
-                          )}
+                  </Tr>
+                ) : (
+                  upcomingAppointments.map((appt) => (
+                    <Tr key={appt.id} className="hover:bg-autumn-50/60 transition-colors">
+                      <Td className="font-bold text-autumn-950">{appt.pet_name || "—"}</Td>
+                      <Td className="text-autumn-800">{appt.client_name || "—"}</Td>
+                      <Td className="text-autumn-800">{appt.vet_name || "—"}</Td>
+                      <Td>
+                        <div className="text-xs space-y-0.5">
+                          <span className="font-semibold text-autumn-900 block">
+                            {appt.appointment_date ? formatDate(appt.appointment_date) : "Sin fecha"}
+                          </span>
+                          <span className="text-autumn-600 font-mono">
+                            {appt.appointment_time ? `${appt.appointment_time} hs` : "—"}
+                          </span>
                         </div>
                       </Td>
-                    )}
-                  </Tr>
-                ))
-              )}
-            </Tbody>
-          </Table>
-        </CardContent>
-      </Card>
+                      <Td className="max-w-xs truncate text-autumn-700" title={appt.reason}>
+                        {appt.reason || "Consulta general"}
+                      </Td>
+                      <Td>{renderStatusBadge(appt.status)}</Td>
+                      {!isClientRole && (
+                        <Td className="text-right">
+                          <div className="flex items-center justify-end space-x-1">
+                            {appt.status !== "confirmado" && (
+                              <button
+                                type="button"
+                                onClick={() => updateAppointmentStatus?.(appt.id, "confirmado")}
+                                className="p-1.5 text-emerald-700 hover:text-emerald-900 hover:bg-emerald-100/70 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                title="Confirmar Turno"
+                                aria-label={`Confirmar turno de ${appt.pet_name}`}
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                            )}
+                            {appt.status !== "cancelado" && (
+                              <button
+                                type="button"
+                                onClick={() => updateAppointmentStatus?.(appt.id, "cancelado")}
+                                className="p-1.5 text-rose-700 hover:text-rose-900 hover:bg-rose-100/70 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-rose-500"
+                                title="Cancelar Turno"
+                                aria-label={`Cancelar turno de ${appt.pet_name}`}
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </Td>
+                      )}
+                    </Tr>
+                  ))
+                )}
+              </Tbody>
+            </Table>
+          </CardContent>
+        </Card>
+      </section>
 
-      {/* Modal para solicitar turno */}
+      {/* MODAL PARA SOLICITAR TURNO */}
       <AppointmentModal
         isOpen={isApptModalOpen}
         onClose={() => setIsApptModalOpen(false)}
-        onSubmit={(newAppt) => addAppointment(newAppt)}
+        onSubmit={handleAppointmentSubmit}
       />
     </div>
   );
