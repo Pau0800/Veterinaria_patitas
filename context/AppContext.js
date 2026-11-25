@@ -57,6 +57,13 @@ function getLocalDateString(dateInput = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
+function isUuid(value) {
+  return (
+    typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+  );
+}
+
 /**
  * Helper seguro para lecturas en LocalStorage
  */
@@ -153,6 +160,49 @@ export function AppProvider({ children, initialUser = null }) {
       setIsInitialized(true);
     }
   }, []);
+
+  // Sincronización de mascotas reales desde public.pets en Supabase (si existen)
+  useEffect(() => {
+    if (!supabase || !user) return;
+    let isCancelled = false;
+
+    const loadPetsFromSupabase = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("pets")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error || !Array.isArray(data) || data.length === 0 || isCancelled) {
+          return;
+        }
+
+        setPets((prevPets) => {
+          const prevById = new Map(prevPets.map((p) => [p.id, p]));
+          const mapped = data.map((row) => {
+            const existing = prevById.get(row.id);
+            const matchedOwner = clients.find((c) => c.id === row.owner_id);
+            return {
+              ...row,
+              owner_name:
+                matchedOwner?.full_name ||
+                existing?.owner_name ||
+                "Sin Asignar",
+            };
+          });
+          saveStorageItem(STORAGE_KEYS.PETS, mapped);
+          return mapped;
+        });
+      } catch (err) {
+        console.error("[AppProvider] Error al leer mascotas de Supabase:", err);
+      }
+    };
+
+    loadPetsFromSupabase();
+    return () => {
+      isCancelled = true;
+    };
+  }, [user, clients]);
 
   // Cierre de sesión real en Supabase Auth + limpieza de cookies de servidor
   const signOut = useCallback(async () => {
@@ -252,14 +302,57 @@ export function AppProvider({ children, initialUser = null }) {
 
   // --- PET ACTIONS ---
   const addPet = useCallback(
-    (newPet) => {
+    async (newPet) => {
       const owner = clients.find((c) => c.id === newPet.owner_id);
+      const ownerName = owner
+        ? owner.full_name
+        : newPet.owner_name || "Sin Asignar";
+
+      let persistedRow = null;
+      if (supabase && user) {
+        try {
+          const dbPayload = {
+            name: newPet.name,
+            species: newPet.species,
+            breed: newPet.breed || "Mestizo",
+            sex: newPet.sex || "Macho",
+            age_years: Number(newPet.age_years) || 0,
+            birth_date: newPet.birth_date || null,
+            weight_kg:
+              newPet.weight_kg !== "" && newPet.weight_kg !== null
+                ? Number(newPet.weight_kg)
+                : null,
+            color: newPet.color || null,
+            photo_url: newPet.photo_url?.trim() || null,
+            microchip: newPet.microchip?.trim() || null,
+            owner_id: isUuid(newPet.owner_id) ? newPet.owner_id : null,
+            notes: newPet.notes || null,
+            status: "activo",
+          };
+          const { data, error } = await supabase
+            .from("pets")
+            .insert(dbPayload)
+            .select("*")
+            .single();
+
+          if (error) {
+            console.error("[Supabase addPet error]:", error.message);
+          } else if (data) {
+            persistedRow = data;
+          }
+        } catch (err) {
+          console.error("[Supabase addPet exception]:", err);
+        }
+      }
+
       const item = {
         ...newPet,
-        id: newPet.id || generateUniqueId("p"),
-        owner_name: owner ? owner.full_name : newPet.owner_name || "Sin Asignar",
-        status: "activo",
-        created_at: getLocalDateString(),
+        ...(persistedRow || {}),
+        id: persistedRow?.id || newPet.id || generateUniqueId("p"),
+        photo_url: persistedRow?.photo_url ?? newPet.photo_url?.trim() ?? "",
+        owner_name: ownerName,
+        status: persistedRow?.status || "activo",
+        created_at: persistedRow?.created_at || getLocalDateString(),
       };
 
       setPets((prevPets) => {
@@ -270,16 +363,49 @@ export function AppProvider({ children, initialUser = null }) {
 
       return item;
     },
-    [clients]
+    [clients, user]
   );
 
   const updatePet = useCallback(
-    (updatedPet) => {
+    async (updatedPet) => {
       const owner = clients.find((c) => c.id === updatedPet.owner_id);
+      const cleanPhotoUrl = updatedPet.photo_url?.trim() || "";
       const updatedItem = {
         ...updatedPet,
+        photo_url: cleanPhotoUrl,
         owner_name: owner ? owner.full_name : updatedPet.owner_name,
       };
+
+      if (supabase && user && isUuid(updatedPet.id)) {
+        try {
+          const { error } = await supabase
+            .from("pets")
+            .update({
+              name: updatedPet.name,
+              species: updatedPet.species,
+              breed: updatedPet.breed || "Mestizo",
+              sex: updatedPet.sex || "Macho",
+              age_years: Number(updatedPet.age_years) || 0,
+              birth_date: updatedPet.birth_date || null,
+              weight_kg:
+                updatedPet.weight_kg !== "" && updatedPet.weight_kg !== null
+                  ? Number(updatedPet.weight_kg)
+                  : null,
+              color: updatedPet.color || null,
+              photo_url: cleanPhotoUrl || null,
+              microchip: updatedPet.microchip?.trim() || null,
+              owner_id: isUuid(updatedPet.owner_id) ? updatedPet.owner_id : null,
+              notes: updatedPet.notes || null,
+            })
+            .eq("id", updatedPet.id);
+
+          if (error) {
+            console.error("[Supabase updatePet error]:", error.message);
+          }
+        } catch (err) {
+          console.error("[Supabase updatePet exception]:", err);
+        }
+      }
 
       setPets((prevPets) => {
         const updated = prevPets.map((p) =>
@@ -324,18 +450,35 @@ export function AppProvider({ children, initialUser = null }) {
         });
       }
     },
-    [clients]
+    [clients, user]
   );
 
-  const softDeletePet = useCallback((petId) => {
-    setPets((prevPets) => {
-      const updated = prevPets.map((p) =>
-        p.id === petId ? { ...p, status: "baja_logica" } : p
-      );
-      saveStorageItem(STORAGE_KEYS.PETS, updated);
-      return updated;
-    });
-  }, []);
+  const softDeletePet = useCallback(
+    async (petId) => {
+      if (supabase && user && isUuid(petId)) {
+        try {
+          const { error } = await supabase
+            .from("pets")
+            .update({ status: "baja_logica" })
+            .eq("id", petId);
+          if (error) {
+            console.error("[Supabase softDeletePet error]:", error.message);
+          }
+        } catch (err) {
+          console.error("[Supabase softDeletePet exception]:", err);
+        }
+      }
+
+      setPets((prevPets) => {
+        const updated = prevPets.map((p) =>
+          p.id === petId ? { ...p, status: "baja_logica" } : p
+        );
+        saveStorageItem(STORAGE_KEYS.PETS, updated);
+        return updated;
+      });
+    },
+    [user]
+  );
 
   // --- MEDICAL RECORD ACTIONS ---
   const addMedicalRecord = useCallback(

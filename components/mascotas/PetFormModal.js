@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import PropTypes from "prop-types";
 import { Modal } from "@/components/ui/Modal";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import {
   Dog,
   User,
@@ -18,11 +19,11 @@ import {
   AlertCircle,
   Loader2,
   CheckCircle2,
+  Upload,
+  Trash2,
+  Link2,
 } from "lucide-react";
 
-/**
- * Opciones estáticas memorizadas fuera del scope de renderizado
- */
 const SPECIES_OPTIONS = [
   { value: "Perro", label: "Perro" },
   { value: "Gato", label: "Gato" },
@@ -34,6 +35,9 @@ const SEX_OPTIONS = [
   { value: "Macho", label: "Macho" },
   { value: "Hembra", label: "Hembra" },
 ];
+
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 const INITIAL_FORM_STATE = {
   name: "",
@@ -50,9 +54,6 @@ const INITIAL_FORM_STATE = {
   notes: "",
 };
 
-/**
- * Calcula automáticamente los años de edad a partir de la fecha de nacimiento
- */
 const calculateAgeInYears = (birthDateString) => {
   if (!birthDateString) return 0;
   const birth = new Date(birthDateString);
@@ -68,6 +69,14 @@ const calculateAgeInYears = (birthDateString) => {
   return Math.max(0, age);
 };
 
+function sanitizeFileName(fileName) {
+  return fileName
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .toLowerCase();
+}
+
 export function PetFormModal({
   isOpen = false,
   onClose = () => {},
@@ -79,7 +88,12 @@ export function PetFormModal({
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Mapeo optimizado de opciones de dueños
+  // Estado para subida local de imagen a Supabase Storage
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [localPreviewUrl, setLocalPreviewUrl] = useState("");
+  const [previewError, setPreviewError] = useState(false);
+  const fileInputRef = useRef(null);
+
   const ownerOptions = useMemo(() => {
     if (!Array.isArray(clients) || clients.length === 0) return [];
     return clients.map((client) => ({
@@ -90,13 +104,36 @@ export function PetFormModal({
     }));
   }, [clients]);
 
-  // Sincronización e inicialización defensiva al abrir/modificar la prop initialData
+  // Limpia ObjectURL al desmontar o cambiar
+  useEffect(() => {
+    return () => {
+      if (localPreviewUrl) {
+        URL.revokeObjectURL(localPreviewUrl);
+      }
+    };
+  }, [localPreviewUrl]);
+
   useEffect(() => {
     if (!isOpen) {
       setErrors({});
       setIsSubmitting(false);
+      setSelectedFile(null);
+      setLocalPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return "";
+      });
+      setPreviewError(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
+
+    setSelectedFile(null);
+    setLocalPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return "";
+    });
+    setPreviewError(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
 
     if (initialData && typeof initialData === "object") {
       const formattedBirthDate = initialData.birth_date
@@ -134,20 +171,26 @@ export function PetFormModal({
     setErrors({});
   }, [initialData, isOpen, ownerOptions]);
 
-  // Manejador unificado de cambios de inputs
   const handleChange = useCallback((field, value) => {
+    if (field === "photo_url") {
+      // Si el usuario escribe o pega una URL externa, descartamos el archivo local pendiente
+      setSelectedFile(null);
+      setLocalPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return "";
+      });
+      setPreviewError(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+
     setFormData((prev) => {
       const updated = { ...prev, [field]: value };
-
-      // Recalcular edad si cambia la fecha de nacimiento
       if (field === "birth_date") {
         updated.age_years = calculateAgeInYears(value);
       }
-
       return updated;
     });
 
-    // Limpiar error específico al escribir
     setErrors((prevErrors) => {
       if (!prevErrors[field]) return prevErrors;
       const newErrors = { ...prevErrors };
@@ -156,7 +199,51 @@ export function PetFormModal({
     });
   }, []);
 
-  // Validaciones del formulario
+  const handleFileSelect = useCallback((event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/") || !ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setErrors((prev) => ({
+        ...prev,
+        photo_url: "Formato no válido. Usá una imagen JPG, PNG, WEBP o GIF.",
+      }));
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setErrors((prev) => ({
+        ...prev,
+        photo_url: "La imagen supera el límite máximo de 5 MB.",
+      }));
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setLocalPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return objectUrl;
+    });
+    setSelectedFile(file);
+    setPreviewError(false);
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.photo_url;
+      return next;
+    });
+  }, []);
+
+  const handleClearPhoto = useCallback(() => {
+    setSelectedFile(null);
+    setLocalPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return "";
+    });
+    setPreviewError(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setFormData((prev) => ({ ...prev, photo_url: "" }));
+  }, []);
+
   const validateForm = () => {
     const newErrors = {};
 
@@ -189,9 +276,12 @@ export function PetFormModal({
       }
     }
 
-    if (formData.photo_url.trim()) {
+    if (!selectedFile && formData.photo_url.trim()) {
       try {
-        new URL(formData.photo_url);
+        const parsed = new URL(formData.photo_url.trim());
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          newErrors.photo_url = "La URL debe comenzar con http:// o https://.";
+        }
       } catch {
         newErrors.photo_url = "Ingresa una URL de imagen válida (http/https).";
       }
@@ -201,7 +291,39 @@ export function PetFormModal({
     return Object.keys(newErrors).length === 0;
   };
 
-  // Envío seguro y asíncrono
+  const uploadPhotoToStorage = async (file) => {
+    if (!isSupabaseConfigured()) {
+      throw new Error(
+        "Supabase no está configurado para subir imágenes desde el computador."
+      );
+    }
+
+    const supabase = createClient();
+    const safeName = sanitizeFileName(file.name || "mascota.jpg");
+    const filePath = `${Date.now()}-${safeName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("pet-photos")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: file.type,
+      });
+
+    if (uploadError) {
+      throw new Error(
+        `No se pudo subir la imagen a Supabase Storage: ${uploadError.message}`
+      );
+    }
+
+    const { data } = supabase.storage.from("pet-photos").getPublicUrl(filePath);
+    if (!data?.publicUrl) {
+      throw new Error("No se pudo obtener la URL pública de la imagen subida.");
+    }
+
+    return data.publicUrl;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -209,6 +331,11 @@ export function PetFormModal({
 
     try {
       setIsSubmitting(true);
+
+      let finalPhotoUrl = formData.photo_url.trim();
+      if (selectedFile) {
+        finalPhotoUrl = await uploadPhotoToStorage(selectedFile);
+      }
 
       const parsedWeight =
         formData.weight_kg !== "" ? parseFloat(formData.weight_kg) : null;
@@ -218,7 +345,7 @@ export function PetFormModal({
         name: formData.name.trim(),
         breed: formData.breed.trim() || "Mestizo",
         color: formData.color.trim(),
-        photo_url: formData.photo_url.trim(),
+        photo_url: finalPhotoUrl,
         microchip: formData.microchip.trim(),
         notes: formData.notes.trim(),
         weight_kg: parsedWeight,
@@ -231,12 +358,15 @@ export function PetFormModal({
       console.error("Error al procesar el formulario de mascota:", error);
       setErrors((prev) => ({
         ...prev,
-        submit: error.message || "Ocurrió un error inesperado al guardar la ficha.",
+        submit:
+          error.message || "Ocurrió un error inesperado al guardar la ficha.",
       }));
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const activePreviewUrl = localPreviewUrl || formData.photo_url.trim();
 
   return (
     <Modal
@@ -253,7 +383,6 @@ export function PetFormModal({
       maxWidth="max-w-3xl"
     >
       <form onSubmit={handleSubmit} noValidate className="space-y-5 py-1">
-        {/* Banner de Error General */}
         {errors.submit && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-start space-x-2.5 text-xs animate-fadeIn">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
@@ -390,33 +519,108 @@ export function PetFormModal({
           />
 
           {/* Código de Microchip */}
-          <Input
-            label={
-              <span className="flex items-center gap-1.5">
-                <QrCode className="w-3.5 h-3.5 text-autumn-500" aria-hidden="true" />
-                Código de Microchip (Opcional)
-              </span>
-            }
-            placeholder="Ej. CHIP-985141002"
-            value={formData.microchip}
-            onChange={(e) => handleChange("microchip", e.target.value)}
-            disabled={isSubmitting}
-          />
+          <div className="md:col-span-2">
+            <Input
+              label={
+                <span className="flex items-center gap-1.5">
+                  <QrCode className="w-3.5 h-3.5 text-autumn-500" aria-hidden="true" />
+                  Código de Microchip (Opcional)
+                </span>
+              }
+              placeholder="Ej. CHIP-985141002"
+              value={formData.microchip}
+              onChange={(e) => handleChange("microchip", e.target.value)}
+              disabled={isSubmitting}
+            />
+          </div>
+        </div>
 
-          {/* URL Fotografía */}
-          <Input
-            label={
-              <span className="flex items-center gap-1.5">
-                <ImageIcon className="w-3.5 h-3.5 text-autumn-500" aria-hidden="true" />
-                URL Fotografía de la Mascota
-              </span>
-            }
-            placeholder="https://ejemplo.com/foto.jpg"
-            value={formData.photo_url}
-            onChange={(e) => handleChange("photo_url", e.target.value)}
-            disabled={isSubmitting}
-            error={errors.photo_url}
-          />
+        {/* Sección de Fotografía: Subida desde PC o URL Externa + Vista Previa */}
+        <div className="bg-autumn-50/70 border border-autumn-200 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-autumn-900 flex items-center gap-1.5">
+              <ImageIcon className="w-4 h-4 text-autumn-600" aria-hidden="true" />
+              Fotografía de la Mascota
+            </span>
+            {(activePreviewUrl || selectedFile) && (
+              <button
+                type="button"
+                onClick={handleClearPhoto}
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-600 hover:text-red-700 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Quitar foto</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            {/* Vista previa */}
+            <div className="w-24 h-24 rounded-2xl border border-autumn-200 bg-white overflow-hidden shrink-0 flex items-center justify-center shadow-xs">
+              {activePreviewUrl && !previewError ? (
+                <img
+                  src={activePreviewUrl}
+                  alt="Vista previa de mascota"
+                  className="w-full h-full object-cover"
+                  onError={() => setPreviewError(true)}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center text-autumn-400 p-2 text-center">
+                  <ImageIcon className="w-6 h-6 opacity-60" aria-hidden="true" />
+                  <span className="text-[10px] mt-1 font-medium">Sin vista previa</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 w-full space-y-3">
+              {/* Opción A: Subir archivo local */}
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,image/*"
+                  onChange={handleFileSelect}
+                  disabled={isSubmitting}
+                  className="hidden"
+                  id="pet-photo-file-input"
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <label
+                    htmlFor="pet-photo-file-input"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-autumn-300 text-autumn-900 hover:bg-autumn-100/70 cursor-pointer transition-colors shadow-2xs"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-autumn-600" aria-hidden="true" />
+                    <span>Subir imagen desde el computador</span>
+                  </label>
+                  {selectedFile ? (
+                    <span className="text-[11px] font-semibold text-sage-700 bg-sage-50 border border-sage-200 px-2.5 py-1 rounded-lg truncate max-w-[220px]">
+                      {selectedFile.name}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-autumn-700/70">
+                      JPG, PNG o WEBP (máx. 5 MB)
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Opción B: Pegar URL externa */}
+              <Input
+                label={
+                  <span className="flex items-center gap-1.5 text-[11px]">
+                    <Link2 className="w-3.5 h-3.5 text-autumn-500" aria-hidden="true" />
+                    O pegá una URL externa de imagen
+                  </span>
+                }
+                placeholder="https://ejemplo.com/foto.jpg"
+                value={formData.photo_url}
+                onChange={(e) => handleChange("photo_url", e.target.value)}
+                disabled={isSubmitting}
+                error={errors.photo_url}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Observaciones y Alergias */}

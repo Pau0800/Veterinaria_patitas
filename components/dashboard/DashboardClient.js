@@ -11,6 +11,7 @@ import { Table, Thead, Tbody, Tr, Th, Td } from "@/components/ui/Table";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { AppointmentModal } from "@/components/turnos/AppointmentModal";
+import { PetAvatar } from "@/components/mascotas/PetAvatar";
 import {
   Users,
   Dog,
@@ -129,6 +130,14 @@ export function DashboardClient() {
   const upcomingAppointments = useMemo(() => {
     return filteredAppointments.slice(0, 5);
   }, [filteredAppointments]);
+
+  const petsById = useMemo(() => {
+    const map = new Map();
+    pets.forEach((p) => {
+      if (p?.id) map.set(p.id, p);
+    });
+    return map;
+  }, [pets]);
 
   const moduleShortcuts = useMemo(() => {
     if (!isAdmin) return [];
@@ -483,7 +492,15 @@ export function DashboardClient() {
                       className="hover:bg-autumn-50/60 transition-colors"
                     >
                       <Td className="font-bold text-autumn-950">
-                        {appt.pet_name || "—"}
+                        <div className="flex items-center gap-2.5">
+                          <PetAvatar
+                            src={petsById.get(appt.pet_id)?.photo_url}
+                            name={appt.pet_name || "Mascota"}
+                            species={petsById.get(appt.pet_id)?.species}
+                            size="xs"
+                          />
+                          <span>{appt.pet_name || "—"}</span>
+                        </div>
                       </Td>
                       {canSeeClients && (
                         <Td className="text-autumn-800">

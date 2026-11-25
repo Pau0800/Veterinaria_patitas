@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { ClientFormModal } from "@/components/clientes/ClientFormModal";
+import { PetAvatar } from "@/components/mascotas/PetAvatar";
 import {
   Search,
   UserPlus,
@@ -492,14 +493,24 @@ export default function ClientsPage() {
               },
               e(
                 "div",
-                null,
-                e("div", { className: "font-bold text-autumn-900 text-base" }, pet.name),
+                { className: "flex items-center gap-3" },
+                e(PetAvatar, {
+                  src: pet.photo_url,
+                  name: pet.name,
+                  species: pet.species,
+                  size: "md",
+                }),
                 e(
                   "div",
-                  { className: "text-xs text-autumn-800 mt-0.5" },
-                  `${pet.species} - ${pet.breed || "Mestizo"} (${
-                    pet.sex || "N/A"
-                  }, ${pet.weight_kg ? `${pet.weight_kg} kg` : "Sin peso"})`
+                  null,
+                  e("div", { className: "font-bold text-autumn-900 text-base" }, pet.name),
+                  e(
+                    "div",
+                    { className: "text-xs text-autumn-800 mt-0.5" },
+                    `${pet.species} - ${pet.breed || "Mestizo"} (${
+                      pet.sex || "N/A"
+                    }, ${pet.weight_kg ? `${pet.weight_kg} kg` : "Sin peso"})`
+                  )
                 )
               ),
               e(

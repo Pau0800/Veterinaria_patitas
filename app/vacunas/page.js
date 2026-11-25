@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { VaccineFormModal } from "@/components/vacunas/VaccineFormModal";
+import { PetAvatar } from "@/components/mascotas/PetAvatar";
 import { formatDate, getDaysRemaining } from "@/lib/utils";
 import {
   Syringe,
@@ -59,6 +60,14 @@ export default function VaccinesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("TODOS");
+
+  const petsById = useMemo(() => {
+    const map = new Map();
+    pets.forEach((p) => {
+      if (p?.id) map.set(p.id, p);
+    });
+    return map;
+  }, [pets]);
 
   // 1. Filtrado de mascotas accesibles según el rol del usuario
   const availablePetIds = useMemo(() => {
@@ -281,14 +290,22 @@ export default function VaccinesPage() {
                   key={vcc.id}
                   className="bg-white p-3.5 rounded-xl border border-amber-200 flex items-center justify-between shadow-xs hover:border-amber-300 transition-colors"
                 >
-                  <div className="space-y-0.5">
-                    <div className="font-bold text-autumn-900 text-sm flex items-center gap-2">
-                      <span>{vcc.pet_name}</span>
-                      <span className="text-xs px-2 py-0.5 rounded-md bg-amber-100/70 text-amber-800 font-semibold">
-                        {vcc.vaccine_name}
-                      </span>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <PetAvatar
+                      src={petsById.get(vcc.pet_id)?.photo_url}
+                      name={vcc.pet_name}
+                      species={petsById.get(vcc.pet_id)?.species}
+                      size="sm"
+                    />
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="font-bold text-autumn-900 text-sm flex items-center gap-2 flex-wrap">
+                        <span>{vcc.pet_name}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-md bg-amber-100/70 text-amber-800 font-semibold">
+                          {vcc.vaccine_name}
+                        </span>
+                      </div>
+                      <p className="text-xs text-autumn-600">Propietario: {vcc.owner_name}</p>
                     </div>
-                    <p className="text-xs text-autumn-600">Propietario: {vcc.owner_name}</p>
                   </div>
 
                   <div>
@@ -387,8 +404,18 @@ export default function VaccinesPage() {
                 return (
                   <Tr key={vcc.id} className="hover:bg-autumn-50/40 transition-colors">
                     <Td className="py-4 px-4">
-                      <div className="font-bold text-autumn-900 text-sm">{vcc.pet_name}</div>
-                      <div className="text-xs font-medium text-autumn-600">{vcc.owner_name}</div>
+                      <div className="flex items-center gap-2.5">
+                        <PetAvatar
+                          src={petsById.get(vcc.pet_id)?.photo_url}
+                          name={vcc.pet_name}
+                          species={petsById.get(vcc.pet_id)?.species}
+                          size="sm"
+                        />
+                        <div>
+                          <div className="font-bold text-autumn-900 text-sm">{vcc.pet_name}</div>
+                          <div className="text-xs font-medium text-autumn-600">{vcc.owner_name}</div>
+                        </div>
+                      </div>
                     </Td>
 
                     <Td className="py-4 px-4">
@@ -459,9 +486,17 @@ export default function VaccinesPage() {
               className="bg-white p-4 rounded-xl border border-autumn-200 shadow-xs space-y-3"
             >
               <div className="flex items-start justify-between border-b border-autumn-100 pb-2.5">
-                <div>
-                  <h3 className="font-bold text-autumn-900 text-base">{vcc.pet_name}</h3>
-                  <p className="text-xs text-autumn-600">Dueño: {vcc.owner_name}</p>
+                <div className="flex items-center gap-2.5">
+                  <PetAvatar
+                    src={petsById.get(vcc.pet_id)?.photo_url}
+                    name={vcc.pet_name}
+                    species={petsById.get(vcc.pet_id)?.species}
+                    size="sm"
+                  />
+                  <div>
+                    <h3 className="font-bold text-autumn-900 text-base">{vcc.pet_name}</h3>
+                    <p className="text-xs text-autumn-600">Dueño: {vcc.owner_name}</p>
+                  </div>
                 </div>
                 {renderStatusBadge(vcc.next_due_date)}
               </div>

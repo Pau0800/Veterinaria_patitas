@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import PropTypes from "prop-types";
-import Image from "next/image";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -90,6 +89,12 @@ export function PetCard({
   const isReadOnly = currentRole === "Cliente";
   const isAdmin = currentRole === "Administrador";
   const SpeciesIcon = useMemo(() => getSpeciesIcon(species), [species]);
+  const normalizedPhotoUrl =
+    typeof photo_url === "string" && photo_url.trim() ? photo_url.trim() : null;
+
+  useEffect(() => {
+    setImageError(false);
+  }, [normalizedPhotoUrl]);
 
   return (
     <Card
@@ -100,15 +105,13 @@ export function PetCard({
     >
       {/* Header Image & Badges Overlay */}
       <div className="relative h-52 w-full bg-gradient-to-br from-autumn-100 to-autumn-200/60 overflow-hidden shrink-0">
-        {photo_url && !imageError ? (
-          <Image
-            src={photo_url}
+        {normalizedPhotoUrl && !imageError ? (
+          <img
+            src={normalizedPhotoUrl}
             alt={`Fotografía de ${name}`}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+            loading="lazy"
             onError={() => setImageError(true)}
-            priority={false}
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-autumn-400 space-y-1">

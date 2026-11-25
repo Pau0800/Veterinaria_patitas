@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useCallback } from "react";
 import { Badge } from "@/components/ui/Badge";
+import { PetAvatar } from "@/components/mascotas/PetAvatar";
 import { formatDate } from "@/lib/utils";
 import {
   Stethoscope,
@@ -76,7 +77,7 @@ const TYPE_CONFIG = {
 const getTypeConfig = (type) => TYPE_CONFIG[type] || TYPE_CONFIG.DEFAULT;
 
 // Componente individual de Tarjeta de Registro
-const TimelineCard = React.memo(({ record }) => {
+const TimelineCard = React.memo(({ record, pet }) => {
   const {
     id,
     type,
@@ -87,6 +88,7 @@ const TimelineCard = React.memo(({ record }) => {
     medication_prescribed,
     record_date,
     vet_name,
+    pet_name,
   } = record;
 
   const config = getTypeConfig(type);
@@ -120,6 +122,19 @@ const TimelineCard = React.memo(({ record }) => {
         {/* Cabecera */}
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2.5 flex-wrap">
+            {(pet || pet_name) && (
+              <div className="flex items-center gap-2 mr-1">
+                <PetAvatar
+                  src={pet?.photo_url}
+                  name={pet?.name || pet_name || "Mascota"}
+                  species={pet?.species}
+                  size="xs"
+                />
+                <span className="text-xs font-bold text-autumn-800">
+                  {pet?.name || pet_name}
+                </span>
+              </div>
+            )}
             <Badge variant={config.badgeVariant}>{type || "Consulta"}</Badge>
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">
               {title || "Sin título"}
@@ -210,8 +225,18 @@ const TimelineCard = React.memo(({ record }) => {
 TimelineCard.displayName = "TimelineCard";
 
 // Componente Principal
-export function MedicalTimeline({ records = [], onAddNew }) {
+export function MedicalTimeline({ records = [], pets = [], onAddNew }) {
   const [selectedFilter, setSelectedFilter] = useState("Todos");
+
+  const petsById = useMemo(() => {
+    const map = new Map();
+    if (Array.isArray(pets)) {
+      pets.forEach((p) => {
+        if (p?.id) map.set(p.id, p);
+      });
+    }
+    return map;
+  }, [pets]);
 
   // 1. Memoización y ordenamiento seguro (más recientes primero)
   const sortedRecords = useMemo(() => {
@@ -303,7 +328,11 @@ export function MedicalTimeline({ records = [], onAddNew }) {
       ) : (
         <ol className="relative ml-4 md:ml-5 border-l-2 border-slate-200 dark:border-slate-800 space-y-6">
           {filteredRecords.map((record) => (
-            <TimelineCard key={record.id || `${record.record_date}-${record.title}`} record={record} />
+            <TimelineCard
+              key={record.id || `${record.record_date}-${record.title}`}
+              record={record}
+              pet={petsById.get(record.pet_id)}
+            />
           ))}
         </ol>
       )}

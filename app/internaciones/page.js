@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Textarea, Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { AdmissionModal } from "@/components/internaciones/AdmissionModal";
+import { PetAvatar } from "@/components/mascotas/PetAvatar";
 import { formatDate } from "@/lib/utils";
 import {
   BedDouble,
@@ -29,11 +30,20 @@ import {
 export default function HospitalizationPage() {
   const {
     hospitalizations = [],
+    pets = [],
     addHospitalization,
     dischargePet,
     updateHospitalizationEvolution,
     currentRole,
   } = useApp();
+
+  const petsById = useMemo(() => {
+    const map = new Map();
+    pets.forEach((p) => {
+      if (p?.id) map.set(p.id, p);
+    });
+    return map;
+  }, [pets]);
 
   // Estados de control de modals e interacción
   const [isAdmissionOpen, setIsAdmissionOpen] = useState(false);
@@ -267,21 +277,29 @@ export default function HospitalizationPage() {
                 <article key={hosp.id}>
                   <Card className="border-l-4 border-l-red-600 shadow-sm hover:shadow-md transition-shadow bg-white rounded-2xl overflow-hidden">
                     <CardHeader className="bg-autumn-50/50 pb-4 border-b border-autumn-100">
-                      <div className="flex items-start justify-between w-full">
-                        <div>
-                          <CardTitle className="text-lg font-black text-autumn-900">
-                            {hosp.pet_name}
-                          </CardTitle>
-                          <div className="flex items-center gap-2 mt-1 text-xs text-autumn-700">
-                            <span className="font-semibold">{hosp.species}</span>
-                            <span>•</span>
-                            <span className="flex items-center gap-1">
-                              <User className="w-3.5 h-3.5 text-autumn-500" aria-hidden="true" />
-                              {hosp.owner_name}
-                            </span>
+                      <div className="flex items-start justify-between w-full gap-3">
+                        <div className="flex items-center gap-3">
+                          <PetAvatar
+                            src={petsById.get(hosp.pet_id)?.photo_url}
+                            name={hosp.pet_name}
+                            species={hosp.species || petsById.get(hosp.pet_id)?.species}
+                            size="md"
+                          />
+                          <div>
+                            <CardTitle className="text-lg font-black text-autumn-900">
+                              {hosp.pet_name}
+                            </CardTitle>
+                            <div className="flex items-center gap-2 mt-1 text-xs text-autumn-700">
+                              <span className="font-semibold">{hosp.species}</span>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <User className="w-3.5 h-3.5 text-autumn-500" aria-hidden="true" />
+                                {hosp.owner_name}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        <Badge variant="danger" className="animate-pulse">
+                        <Badge variant="danger" className="animate-pulse shrink-0">
                           En Cama
                         </Badge>
                       </div>
@@ -395,11 +413,19 @@ export default function HospitalizationPage() {
                   key={hosp.id}
                   className="bg-white p-4 rounded-xl border border-autumn-200/80 shadow-sm hover:shadow transition-shadow text-xs space-y-2"
                 >
-                  <div className="flex items-center justify-between pb-2 border-b border-autumn-100">
-                    <span className="font-extrabold text-autumn-900 text-sm">
-                      {hosp.pet_name}
-                    </span>
-                    <Badge variant="success">Alta Médica</Badge>
+                  <div className="flex items-center justify-between pb-2 border-b border-autumn-100 gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <PetAvatar
+                        src={petsById.get(hosp.pet_id)?.photo_url}
+                        name={hosp.pet_name}
+                        species={hosp.species || petsById.get(hosp.pet_id)?.species}
+                        size="sm"
+                      />
+                      <span className="font-extrabold text-autumn-900 text-sm truncate">
+                        {hosp.pet_name}
+                      </span>
+                    </div>
+                    <Badge variant="success" className="shrink-0">Alta Médica</Badge>
                   </div>
 
                   <div className="text-autumn-700 space-y-1">

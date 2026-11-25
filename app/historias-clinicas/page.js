@@ -232,7 +232,7 @@ export default function MedicalRecordsPage() {
 
         {/* Renderizado Condicional: Registros vs Estado Vacío */}
         {filteredRecords.length > 0 ? (
-          <MedicalTimeline records={filteredRecords} />
+          <MedicalTimeline records={filteredRecords} pets={availablePets} />
         ) : (
           <div className="py-12 px-4 text-center space-y-4 max-w-md mx-auto">
             <div className="w-12 h-12 rounded-full bg-autumn-100 flex items-center justify-center mx-auto text-autumn-600">

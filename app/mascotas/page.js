@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { useApp } from "@/context/AppContext";
 import { PetCard } from "@/components/mascotas/PetCard";
+import { PetAvatar } from "@/components/mascotas/PetAvatar";
 import { PetFormModal } from "@/components/mascotas/PetFormModal";
 import { Modal } from "@/components/ui/Modal";
 import { MedicalTimeline } from "@/components/historias/MedicalTimeline";
@@ -123,6 +124,7 @@ export default function PetsPage() {
       handleCloseFormModal();
     } catch (error) {
       console.error("Error al guardar la información de la mascota:", error);
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
@@ -284,22 +286,30 @@ export default function PetsPage() {
           <div className="space-y-6">
             {/* Banner Informativo del Paciente */}
             <div className="bg-autumn-50/80 p-4 rounded-2xl border border-autumn-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-black text-autumn-900">
-                    {selectedPetForHistory.name}
-                  </h3>
-                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-autumn-200/70 text-autumn-800">
-                    {selectedPetForHistory.species}
-                  </span>
-                </div>
-                <div className="text-xs text-autumn-700 flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold">{selectedPetForHistory.breed || "Raza no especificada"}</span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <User className="w-3.5 h-3.5 text-autumn-500" aria-hidden="true" />
-                    Propietario: {selectedPetForHistory.owner_name || "Sin tutor asignado"}
-                  </span>
+              <div className="flex items-center gap-3.5">
+                <PetAvatar
+                  src={selectedPetForHistory.photo_url}
+                  name={selectedPetForHistory.name}
+                  species={selectedPetForHistory.species}
+                  size="lg"
+                />
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-black text-autumn-900">
+                      {selectedPetForHistory.name}
+                    </h3>
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-autumn-200/70 text-autumn-800">
+                      {selectedPetForHistory.species}
+                    </span>
+                  </div>
+                  <div className="text-xs text-autumn-700 flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold">{selectedPetForHistory.breed || "Raza no especificada"}</span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <User className="w-3.5 h-3.5 text-autumn-500" aria-hidden="true" />
+                      Propietario: {selectedPetForHistory.owner_name || "Sin tutor asignado"}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -334,7 +344,7 @@ export default function PetsPage() {
                   Historial de Consultas e Intervenciones
                 </h4>
               </div>
-              <MedicalTimeline records={selectedPetMedicalRecords} />
+              <MedicalTimeline records={selectedPetMedicalRecords} pets={[selectedPetForHistory]} />
             </div>
           </div>
         )}

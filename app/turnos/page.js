@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { AppointmentModal } from "@/components/turnos/AppointmentModal";
+import { PetAvatar } from "@/components/mascotas/PetAvatar";
 import { VETERINARIANS } from "@/lib/mockData";
 import { formatDate } from "@/lib/utils";
 import {
@@ -39,12 +40,21 @@ export default function AppointmentsPage() {
   const router = useRouter();
   const {
     appointments = [],
+    pets = [],
     updateAppointmentStatus,
     updateAppointment,
     addAppointment,
     currentRole,
     activeClientId,
   } = useApp();
+
+  const petsById = useMemo(() => {
+    const map = new Map();
+    pets.forEach((p) => {
+      if (p?.id) map.set(p.id, p);
+    });
+    return map;
+  }, [pets]);
 
   // Estados de Filtros
   const [selectedVet, setSelectedVet] = useState("TODOS");
@@ -340,7 +350,15 @@ export default function AppointmentsPage() {
                   </Td>
 
                   <Td className="py-4 px-4 font-bold text-autumn-900 text-sm">
-                    {appt.pet_name}
+                    <div className="flex items-center gap-2.5">
+                      <PetAvatar
+                        src={petsById.get(appt.pet_id)?.photo_url}
+                        name={appt.pet_name}
+                        species={petsById.get(appt.pet_id)?.species}
+                        size="sm"
+                      />
+                      <span>{appt.pet_name}</span>
+                    </div>
                   </Td>
 
                   <Td className="py-4 px-4 text-sm text-autumn-800">
@@ -463,9 +481,17 @@ export default function AppointmentsPage() {
               className="bg-white p-4 rounded-xl border border-autumn-200 shadow-xs space-y-3"
             >
               <div className="flex items-start justify-between border-b border-autumn-100 pb-2.5">
-                <div>
-                  <h3 className="font-bold text-autumn-900 text-base">{appt.pet_name}</h3>
-                  <p className="text-xs text-autumn-700">Dueño: {appt.client_name}</p>
+                <div className="flex items-center gap-2.5">
+                  <PetAvatar
+                    src={petsById.get(appt.pet_id)?.photo_url}
+                    name={appt.pet_name}
+                    species={petsById.get(appt.pet_id)?.species}
+                    size="sm"
+                  />
+                  <div>
+                    <h3 className="font-bold text-autumn-900 text-base">{appt.pet_name}</h3>
+                    <p className="text-xs text-autumn-700">Dueño: {appt.client_name}</p>
+                  </div>
                 </div>
                 {renderBadge(appt.status)}
               </div>
