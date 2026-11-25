@@ -100,11 +100,13 @@ export default function GeminiChat() {
     setLoading(true);
     setErrorStatus(null);
 
-    // Formatear conversación para enviar a la API
-    const payloadHistory = [...messages, userMessage].map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
+    // Formatear conversación previa para enviar a la API (excluyendo bienvenida, errores y el turno actual)
+    const payloadHistory = messages
+      .filter((m) => m.id !== "welcome-msg" && !m.isError && m.content)
+      .map((m) => ({
+        role: m.role === "assistant" ? "model" : "user",
+        text: m.content,
+      }));
 
     try {
       const response = await fetch("/api/ia", {
@@ -118,7 +120,7 @@ export default function GeminiChat() {
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         throw new Error(
