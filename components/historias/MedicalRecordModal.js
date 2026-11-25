@@ -40,15 +40,19 @@ export function MedicalRecordModal({
   // 1. Estado inicial memoizado dinámicamente
   const getInitialState = useCallback(() => {
     const today = new Date().toISOString().split("T")[0];
-    const defaultPet = pets.length > 0 ? pets[0].id : "";
+    const defaultPet = pets.length > 0 ? String(pets[0].id) : "";
     const loggedVet =
       user?.role === "veterinario"
         ? veterinarians.find((v) => String(v.id) === String(user.id))
         : null;
     const defaultVet =
-      loggedVet?.id || (veterinarians.length > 0 ? veterinarians[0].id : "");
+      loggedVet?.id
+        ? String(loggedVet.id)
+        : veterinarians.length > 0
+        ? String(veterinarians[0].id)
+        : "";
 
-    return {
+    const base = {
       pet_id: defaultPet,
       vet_id: defaultVet,
       type: "Consulta General",
@@ -58,7 +62,19 @@ export function MedicalRecordModal({
       treatment: "",
       medication_prescribed: "",
       record_date: today,
+    };
+
+    if (!defaultValues) return base;
+
+    return {
+      ...base,
       ...defaultValues,
+      pet_id: defaultValues.pet_id ? String(defaultValues.pet_id) : base.pet_id,
+      vet_id: defaultValues.vet_id ? String(defaultValues.vet_id) : base.vet_id,
+      type: defaultValues.type || base.type,
+      record_date: defaultValues.record_date || base.record_date,
+      title: defaultValues.title ?? base.title,
+      description: defaultValues.description ?? base.description,
     };
   }, [pets, veterinarians, defaultValues, user]);
 
@@ -69,7 +85,7 @@ export function MedicalRecordModal({
   // Modo edición vs. creación
   const isEditing = Boolean(defaultValues && defaultValues.id);
 
-  // Reset del estado al abrir el modal o cambiar las props base
+  // Reset y sincronización al abrir el modal o cuando terminan de cargar pets/veterinarians/defaultValues
   useEffect(() => {
     if (isOpen) {
       setFormData(getInitialState());
@@ -83,7 +99,7 @@ export function MedicalRecordModal({
     () => [
       { value: "", label: "Seleccionar mascota..." },
       ...pets.map((p) => ({
-        value: p.id,
+        value: String(p.id),
         label: `${p.name} (${p.species}) — Dueño: ${p.owner_name}`,
       })),
     ],
@@ -94,7 +110,7 @@ export function MedicalRecordModal({
     () => [
       { value: "", label: "Seleccionar profesional..." },
       ...veterinarians.map((v) => ({
-        value: v.id,
+        value: String(v.id),
         label: v.full_name || "Veterinario",
       })),
     ],

@@ -260,7 +260,7 @@ export function AppProvider({ children, initialUser = null }) {
         const [apptsRes, medRes, vaccRes, hospRes] = await Promise.all([
           supabase
             .from("appointments")
-            .select("*")
+            .select("*, pets:pet_id(id, name, species, photo_url)")
             .order("appointment_date", { ascending: false }),
           supabase
             .from("medical_records")
@@ -281,13 +281,16 @@ export function AppProvider({ children, initialUser = null }) {
         if (!apptsRes.error && Array.isArray(apptsRes.data) && apptsRes.data.length > 0) {
           const mappedAppts = apptsRes.data.map((row) => {
             const assignedVetId = row.veterinarian_id || row.vet_id || "";
+            const joinedPet = row.pets || null;
             const pet = petMap.get(row.pet_id);
             return {
               ...row,
               vet_id: assignedVetId,
               veterinarian_id: assignedVetId,
               vet_name: row.vet_name || vetMap.get(assignedVetId) || "Sin Asignar",
-              pet_name: row.pet_name || pet?.name || "Mascota",
+              pet_name: row.pet_name || joinedPet?.name || pet?.name || "Mascota",
+              pet_photo_url: joinedPet?.photo_url || pet?.photo_url || "",
+              pet_species: joinedPet?.species || pet?.species || "",
               client_name:
                 row.client_name ||
                 clientMap.get(row.client_id) ||
@@ -760,6 +763,8 @@ export function AppProvider({ children, initialUser = null }) {
         vet_id: persistedRow?.veterinarian_id || persistedRow?.vet_id || assignedVetId,
         veterinarian_id: persistedRow?.veterinarian_id || persistedRow?.vet_id || assignedVetId,
         pet_name: petName,
+        pet_photo_url: pet?.photo_url || newAppt.pet_photo_url || "",
+        pet_species: pet?.species || newAppt.pet_species || "",
         client_name: clientName,
         vet_name: vetName,
         status: persistedRow?.status || newAppt.status || "solicitado",
@@ -917,6 +922,26 @@ export function AppProvider({ children, initialUser = null }) {
     },
     [veterinarians]
   );
+
+  const deleteAppointment = useCallback(async (appointmentId) => {
+    if (isUuid(appointmentId)) {
+      const response = await fetch(`/api/turnos/${appointmentId}`, {
+        method: "DELETE",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(
+          data?.error || "No se pudo eliminar el turno de Supabase."
+        );
+      }
+    }
+
+    setAppointments((prev) => {
+      const updated = prev.filter((a) => a.id !== appointmentId);
+      saveStorageItem(STORAGE_KEYS.APPOINTMENTS, updated);
+      return updated;
+    });
+  }, []);
 
   // --- VACCINE ACTIONS ---
   const addVaccine = useCallback(
@@ -1149,6 +1174,7 @@ export function AppProvider({ children, initialUser = null }) {
       updateAppointment,
       updateAppointmentStatus,
       reassignAppointmentVet,
+      deleteAppointment,
       addVaccine,
       addHospitalization,
       dischargePet,
@@ -1186,6 +1212,7 @@ export function AppProvider({ children, initialUser = null }) {
       updateAppointment,
       updateAppointmentStatus,
       reassignAppointmentVet,
+      deleteAppointment,
       addVaccine,
       addHospitalization,
       dischargePet,

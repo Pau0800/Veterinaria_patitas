@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { MedicalTimeline } from "@/components/historias/MedicalTimeline";
@@ -17,10 +17,41 @@ import {
   AlertCircle 
 } from "lucide-react";
 
+function inferRecordType(motivo = "") {
+  const text = motivo.toLowerCase();
+  if (text.includes("cirug") || text.includes("castrac") || text.includes("quirúr")) {
+    return "Cirugía";
+  }
+  if (
+    text.includes("estudi") ||
+    text.includes("rayos") ||
+    text.includes("radiograf") ||
+    text.includes("ecograf") ||
+    text.includes("análisis") ||
+    text.includes("laboratorio")
+  ) {
+    return "Estudios";
+  }
+  if (text.includes("tratam")) {
+    return "Tratamiento";
+  }
+  if (text.includes("medic") || text.includes("receta")) {
+    return "Medicación";
+  }
+  if (text.includes("evoluc") || text.includes("seguimiento") || text.includes("control")) {
+    return "Evolución";
+  }
+  if (text.includes("diagn") || text.includes("urgenc") || text.includes("emerg")) {
+    return "Diagnóstico";
+  }
+  return "Consulta General";
+}
+
 export default function MedicalRecordsPage() {
   const { 
     medicalRecords = [], 
-    pets = [], 
+    pets = [],
+    veterinarians = [],
     addMedicalRecord, 
     currentRole, 
     activeClientId 
@@ -34,36 +65,7 @@ export default function MedicalRecordsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [defaultValues, setDefaultValues] = useState(null);
-
-  // Lectura reactiva y segura de parámetros de URL (SSR/Next.js amigable)
-  useEffect(() => {
-    const turnoId = searchParams.get("turnoId");
-    if (!turnoId) return;
-
-    const mascotaId = searchParams.get("mascotaId") || "";
-    const veterinarioId = searchParams.get("veterinarioId") || "";
-    const fecha = searchParams.get("fecha") || new Date().toISOString().split("T")[0];
-    const motivo = searchParams.get("motivo") || "";
-
-    setDefaultValues({
-      pet_id: mascotaId,
-      vet_id: veterinarioId,
-      type: "",
-      record_date: fecha,
-      title: motivo,
-    });
-
-    if (mascotaId) {
-      setSelectedPetId(mascotaId);
-    }
-
-    setIsModalOpen(true);
-  }, [searchParams]);
-
-  // Validación de permisos por rol
-  const canCreateRecord = useMemo(() => {
-    return currentRole === "Administrador" || currentRole === "Veterinario";
-  }, [currentRole]);
+  const openedTurnoIdRef = useRef(null);
 
   // Filtrado memoizado de mascotas según el Rol activo
   const availablePets = useMemo(() => {
@@ -73,6 +75,67 @@ export default function MedicalRecordsPage() {
     }
     return pets.filter((p) => p.status === "activo");
   }, [pets, currentRole, activeClientId]);
+
+  // Lectura reactiva y segura de parámetros de URL (espera/resuelve contra pets y veterinarians)
+  useEffect(() => {
+    const turnoId = searchParams.get("turnoId");
+    if (!turnoId) return;
+
+    const rawMascotaId = searchParams.get("mascotaId") || "";
+    const mascotaNombre = (searchParams.get("mascotaNombre") || "").trim();
+    const rawVetId = searchParams.get("veterinarioId") || "";
+    const vetNombre = (searchParams.get("veterinarioNombre") || "").trim();
+    const fecha = searchParams.get("fecha") || new Date().toISOString().split("T")[0];
+    const motivo = searchParams.get("motivo") || "";
+    const notas = searchParams.get("notas") || "";
+
+    const matchedPet =
+      availablePets.find((p) => String(p.id) === String(rawMascotaId)) ||
+      (mascotaNombre
+        ? availablePets.find(
+            (p) => p.name?.trim().toLowerCase() === mascotaNombre.toLowerCase()
+          )
+        : null);
+
+    const resolvedPetId = matchedPet ? String(matchedPet.id) : String(rawMascotaId);
+
+    const matchedVet =
+      veterinarians.find(
+        (v) =>
+          String(v.id) === String(rawVetId) ||
+          String(v.user_id) === String(rawVetId)
+      ) ||
+      (vetNombre
+        ? veterinarians.find(
+            (v) => v.full_name?.trim().toLowerCase() === vetNombre.toLowerCase()
+          )
+        : null);
+
+    const resolvedVetId = matchedVet ? String(matchedVet.id) : String(rawVetId);
+
+    setDefaultValues({
+      pet_id: resolvedPetId,
+      vet_id: resolvedVetId,
+      type: inferRecordType(motivo),
+      record_date: fecha,
+      title: motivo,
+      description: notas.trim(),
+    });
+
+    if (resolvedPetId) {
+      setSelectedPetId(resolvedPetId);
+    }
+
+    if (openedTurnoIdRef.current !== turnoId) {
+      openedTurnoIdRef.current = turnoId;
+      setIsModalOpen(true);
+    }
+  }, [searchParams, availablePets, veterinarians]);
+
+  // Validación de permisos por rol
+  const canCreateRecord = useMemo(() => {
+    return currentRole === "Administrador" || currentRole === "Veterinario";
+  }, [currentRole]);
 
   // Filtrado memoizado de historias clínicas con búsquedas defensivas contra null/undefined
   const filteredRecords = useMemo(() => {

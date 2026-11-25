@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { AppointmentModal } from "@/components/turnos/AppointmentModal";
 import { PetAvatar } from "@/components/mascotas/PetAvatar";
+import { Modal } from "@/components/ui/Modal";
 import { formatDate } from "@/lib/utils";
 import {
   CalendarCheck,
@@ -25,6 +26,7 @@ import {
   CalendarDays,
   AlertCircle,
   FileSpreadsheet,
+  Trash2,
 } from "lucide-react";
 
 // Configuración de visualización según estado del turno
@@ -44,6 +46,7 @@ export default function AppointmentsPage() {
     updateAppointmentStatus,
     updateAppointment,
     addAppointment,
+    deleteAppointment,
     currentRole,
     activeClientId,
   } = useApp();
@@ -51,7 +54,15 @@ export default function AppointmentsPage() {
   const petsById = useMemo(() => {
     const map = new Map();
     pets.forEach((p) => {
-      if (p?.id) map.set(p.id, p);
+      if (p?.id) map.set(String(p.id), p);
+    });
+    return map;
+  }, [pets]);
+
+  const petsByName = useMemo(() => {
+    const map = new Map();
+    pets.forEach((p) => {
+      if (p?.name) map.set(p.name.trim().toLowerCase(), p);
     });
     return map;
   }, [pets]);
@@ -66,6 +77,9 @@ export default function AppointmentsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAppt, setEditingAppt] = useState(null);
   const [isConfirmingCancel, setIsConfirmingCancel] = useState(null);
+  const [deletingAppt, setDeletingAppt] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   // Opciones memorizadas para selectores (veterinarios reales desde public.profiles)
   const vetOptions = useMemo(
@@ -126,17 +140,42 @@ export default function AppointmentsPage() {
   // Handlers de navegación e interacción
   const handleOpenMedicalRecord = useCallback(
     (appt) => {
+      const matchedPet =
+        petsById.get(String(appt.pet_id)) ||
+        petsByName.get((appt.pet_name || "").trim().toLowerCase());
+
       const params = new URLSearchParams({
-        turnoId: appt.id,
-        mascotaId: appt.pet_id,
-        veterinarioId: appt.vet_id,
-        fecha: appt.appointment_date,
-        motivo: appt.reason,
+        turnoId: String(appt.id || ""),
+        mascotaId: String(appt.pet_id || matchedPet?.id || ""),
+        mascotaNombre: String(appt.pet_name || matchedPet?.name || ""),
+        veterinarioId: String(appt.veterinarian_id || appt.vet_id || ""),
+        veterinarioNombre: String(appt.vet_name || ""),
+        fecha: appt.appointment_date
+          ? String(appt.appointment_date).split("T")[0]
+          : "",
+        motivo: String(appt.reason || ""),
+        notas: String(appt.notes || ""),
       });
       router.push(`/historias-clinicas?${params.toString()}`);
     },
-    [router]
+    [router, petsById, petsByName]
   );
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deletingAppt) return;
+    setIsDeleting(true);
+    setDeleteError("");
+    try {
+      await deleteAppointment(deletingAppt.id);
+      setDeletingAppt(null);
+    } catch (error) {
+      setDeleteError(
+        error?.message || "No se pudo eliminar el turno cancelado."
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [deletingAppt, deleteAppointment]);
 
   const handleResetFilters = useCallback(() => {
     setSelectedVet("TODOS");
@@ -352,10 +391,19 @@ export default function AppointmentsPage() {
                   <Td className="py-4 px-4 font-bold text-autumn-900 text-sm">
                     <div className="flex items-center gap-2.5">
                       <PetAvatar
-                        src={petsById.get(appt.pet_id)?.photo_url}
+                        src={
+                          appt.pet_photo_url ||
+                          petsById.get(String(appt.pet_id))?.photo_url ||
+                          petsByName.get((appt.pet_name || "").trim().toLowerCase())?.photo_url
+                        }
                         name={appt.pet_name}
-                        species={petsById.get(appt.pet_id)?.species}
+                        species={
+                          appt.pet_species ||
+                          petsById.get(String(appt.pet_id))?.species ||
+                          petsByName.get((appt.pet_name || "").trim().toLowerCase())?.species
+                        }
                         size="sm"
+                        className="rounded-full"
                       />
                       <span>{appt.pet_name}</span>
                     </div>
@@ -408,6 +456,22 @@ export default function AppointmentsPage() {
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span className="hidden lg:inline">Confirmar</span>
+                        </button>
+                      )}
+
+                      {appt.status === "cancelado" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeleteError("");
+                            setDeletingAppt(appt);
+                          }}
+                          className="p-1.5 bg-red-600 text-white hover:bg-red-700 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 focus:ring-2 focus:ring-red-400 focus:outline-hidden shadow-2xs"
+                          title="Eliminar turno cancelado"
+                          aria-label={`Eliminar turno cancelado de ${appt.pet_name}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Eliminar</span>
                         </button>
                       )}
 
@@ -483,10 +547,19 @@ export default function AppointmentsPage() {
               <div className="flex items-start justify-between border-b border-autumn-100 pb-2.5">
                 <div className="flex items-center gap-2.5">
                   <PetAvatar
-                    src={petsById.get(appt.pet_id)?.photo_url}
+                    src={
+                      appt.pet_photo_url ||
+                      petsById.get(String(appt.pet_id))?.photo_url ||
+                      petsByName.get((appt.pet_name || "").trim().toLowerCase())?.photo_url
+                    }
                     name={appt.pet_name}
-                    species={petsById.get(appt.pet_id)?.species}
+                    species={
+                      appt.pet_species ||
+                      petsById.get(String(appt.pet_id))?.species ||
+                      petsByName.get((appt.pet_name || "").trim().toLowerCase())?.species
+                    }
                     size="sm"
+                    className="rounded-full"
                   />
                   <div>
                     <h3 className="font-bold text-autumn-900 text-base">{appt.pet_name}</h3>
@@ -544,6 +617,21 @@ export default function AppointmentsPage() {
                     </button>
                   )}
 
+                  {appt.status === "cancelado" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteError("");
+                        setDeletingAppt(appt);
+                      }}
+                      className="px-2 py-1.5 bg-red-600 text-white hover:bg-red-700 rounded-lg text-xs font-semibold flex items-center gap-1"
+                      title="Eliminar turno cancelado"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Eliminar</span>
+                    </button>
+                  )}
+
                   {appt.status !== "cancelado" && (
                     <button
                       onClick={() => handleStatusUpdate(appt.id, "cancelado")}
@@ -578,6 +666,51 @@ export default function AppointmentsPage() {
         }}
         initialData={editingAppt}
       />
+
+      {/* Modal Confirmación de Eliminación de Turno Cancelado */}
+      <Modal
+        isOpen={Boolean(deletingAppt)}
+        onClose={() => !isDeleting && setDeletingAppt(null)}
+        title="Eliminar Turno Cancelado"
+        maxWidth="max-w-md"
+      >
+        {deletingAppt && (
+          <div className="space-y-4">
+            {deleteError && (
+              <div
+                role="alert"
+                className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-medium"
+              >
+                {deleteError}
+              </div>
+            )}
+            <p className="text-xs sm:text-sm text-autumn-800 leading-relaxed">
+              ¿Querés eliminar definitivamente el turno cancelado de{" "}
+              <strong className="text-autumn-950">{deletingAppt.pet_name}</strong>{" "}
+              ({formatDate(deletingAppt.appointment_date)} · {deletingAppt.appointment_time} hs)? Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-end gap-2.5 pt-2 border-t border-autumn-100">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDeletingAppt(null)}
+                disabled={isDeleting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="font-semibold"
+              >
+                {isDeleting ? "Eliminando..." : "Eliminar"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
