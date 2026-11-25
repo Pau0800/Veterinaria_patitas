@@ -171,15 +171,15 @@ export async function POST(request) {
     const lastHistoryItem = formattedHistory[formattedHistory.length - 1];
     const contents =
       lastHistoryItem?.role === "user" &&
-      lastHistoryItem?.parts?.[0]?.text === sanitizedMessage
+        lastHistoryItem?.parts?.[0]?.text === sanitizedMessage
         ? formattedHistory
         : [
-            ...formattedHistory,
-            {
-              role: "user",
-              parts: [{ text: sanitizedMessage }],
-            },
-          ];
+          ...formattedHistory,
+          {
+            role: "user",
+            parts: [{ text: sanitizedMessage }],
+          },
+        ];
 
     const modelsToTry = [
       PRIMARY_MODEL,
