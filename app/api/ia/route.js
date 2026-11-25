@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { getAuthenticatedProfile } from "@/lib/auth";
 
 // Límite de caracteres para prevenir ataques de denegación de servicio por longitud
 const MAX_MESSAGE_LENGTH = 2000;
@@ -27,6 +28,15 @@ REGLAS STRICTAS:
  */
 export async function POST(request) {
   try {
+    // 0. Verificar sesión autenticada y perfil activo en servidor
+    const profile = await getAuthenticatedProfile();
+    if (!profile) {
+      return Response.json(
+        { error: "No autorizado. Debes iniciar sesión para usar Patitas IA." },
+        { status: 401 }
+      );
+    }
+
     // 1. Validar el Content-Type de la solicitud
     const contentType = request.headers.get("content-type") || "";
     if (!contentType.includes("application/json")) {

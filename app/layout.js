@@ -2,8 +2,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 
 import { AppProvider } from "@/context/AppContext";
-import { RoleBanner } from "@/components/layout/RoleBanner";
 import { ClientLayoutWrapper } from "@/components/layout/ClientLayoutWrapper";
+import { getAuthenticatedProfile } from "@/lib/auth";
 
 // Optimización de tipografía nativa con Next.js Font Optimization
 const inter = Inter({
@@ -39,7 +39,9 @@ export const viewport = {
   themeColor: "#fdf8f6",
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const initialUser = await getAuthenticatedProfile();
+
   return (
     <html lang="es" className={`${inter.variable} h-full scroll-smooth`}>
       <body className="min-h-full bg-autumn-50 text-autumn-900 font-sans flex flex-col antialiased selection:bg-autumn-200 selection:text-autumn-900">
@@ -51,10 +53,7 @@ export default function RootLayout({ children }) {
           Saltar al contenido principal
         </a>
 
-        <AppProvider>
-          {/* Banner de simulación de roles */}
-          <RoleBanner />
-
+        <AppProvider initialUser={initialUser}>
           {/* Wrapper interactivo de cliente para Navbar, Sidebar y GeminiChat */}
           <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
         </AppProvider>

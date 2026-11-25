@@ -8,6 +8,7 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
+import { useRouter } from "next/navigation";
 import {
   INITIAL_CLIENTS,
   INITIAL_PETS,
@@ -19,6 +20,7 @@ import {
   VETERINARIANS,
 } from "@/lib/mockData";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { getRoleLabel } from "@/lib/permissions";
 
 const AppContext = createContext(null);
 
@@ -31,7 +33,6 @@ const STORAGE_KEYS = {
   VACCINES: "vet_vaccines_v2",
   HOSPITALIZATIONS: "vet_hospitalizations_v2",
   PHARMACY: "vet_pharmacy_v2",
-  ROLE: "vet_current_role_v2",
 };
 
 /**
@@ -82,12 +83,14 @@ function saveStorageItem(key, value) {
   }
 }
 
-export function AppProvider({ children }) {
+export function AppProvider({ children, initialUser = null }) {
+  const router = useRouter();
+
   // Estado de hidratación inicial para evitar errores de coincidencia en SSR
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Estados de Dominio
-  const [currentRole, setCurrentRoleState] = useState("Administrador");
+  // Usuario autenticado y rol real desde Supabase Auth + public.profiles
+  const [user, setUser] = useState(initialUser);
   const [clients, setClients] = useState(INITIAL_CLIENTS);
   const [pets, setPets] = useState(INITIAL_PETS);
   const [medicalRecords, setMedicalRecords] = useState(INITIAL_MEDICAL_RECORDS);
@@ -96,15 +99,39 @@ export function AppProvider({ children }) {
   const [hospitalizations, setHospitalizations] = useState(INITIAL_HOSPITALIZATIONS);
   const [pharmacy, setPharmacy] = useState(INITIAL_PHARMACY);
 
-  // Cliente activo cuando el rol es "Cliente" (María Fernández - id: c1 por defecto)
+  // Sincroniza el usuario recibido desde Server Components en cada navegación/refresh
+  useEffect(() => {
+    setUser(initialUser);
+  }, [initialUser]);
+
+  // Escucha cambios de sesión en cliente (ej. cierre de sesión en otra pestaña)
+  useEffect(() => {
+    if (!supabase) return;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        setUser(null);
+        router.replace("/login");
+        router.refresh();
+      }
+    });
+    return () => subscription?.unsubscribe();
+  }, [router]);
+
+  const userRole = user?.role || null;
+  const currentRole = useMemo(() => {
+    return userRole ? getRoleLabel(userRole) : null;
+  }, [userRole]);
+
+  // Preparado para futura incorporación del rol cliente
   const activeClientId = useMemo(() => {
-    return currentRole === "Cliente" ? "c1" : null;
-  }, [currentRole]);
+    return userRole === "cliente" ? user?.id || null : null;
+  }, [userRole, user]);
 
   // Hidratación segura en el montaje del cliente
   useEffect(() => {
     try {
-      const storedRole = loadStorageItem(STORAGE_KEYS.ROLE, "Administrador");
       const storedClients = loadStorageItem(STORAGE_KEYS.CLIENTS, INITIAL_CLIENTS);
       const storedPets = loadStorageItem(STORAGE_KEYS.PETS, INITIAL_PETS);
       const storedMedical = loadStorageItem(STORAGE_KEYS.MEDICAL, INITIAL_MEDICAL_RECORDS);
@@ -113,7 +140,6 @@ export function AppProvider({ children }) {
       const storedHosp = loadStorageItem(STORAGE_KEYS.HOSPITALIZATIONS, INITIAL_HOSPITALIZATIONS);
       const storedPharm = loadStorageItem(STORAGE_KEYS.PHARMACY, INITIAL_PHARMACY);
 
-      setCurrentRoleState(storedRole);
       setClients(storedClients);
       setPets(storedPets);
       setMedicalRecords(storedMedical);
@@ -128,10 +154,19 @@ export function AppProvider({ children }) {
     }
   }, []);
 
-  // Manejador de cambio de rol con persistencia
-  const setCurrentRole = useCallback((role) => {
-    setCurrentRoleState(role);
-    saveStorageItem(STORAGE_KEYS.ROLE, role);
+  // Cierre de sesión real en Supabase Auth + limpieza de cookies de servidor
+  const signOut = useCallback(async () => {
+    try {
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (error) {
+      console.error("[AppProvider] Error al cerrar sesión:", error);
+    } finally {
+      setUser(null);
+      window.location.replace("/login");
+    }
   }, []);
 
   // Restablecimiento de datos predeterminados (Utility)
@@ -502,8 +537,10 @@ export function AppProvider({ children }) {
   const contextValue = useMemo(
     () => ({
       isInitialized,
+      user,
+      userRole,
       currentRole,
-      setCurrentRole,
+      signOut,
       activeClientId,
       clients,
       pets,
@@ -535,8 +572,10 @@ export function AppProvider({ children }) {
     }),
     [
       isInitialized,
+      user,
+      userRole,
       currentRole,
-      setCurrentRole,
+      signOut,
       activeClientId,
       clients,
       pets,

@@ -2,11 +2,15 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
+import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Navbar } from "@/components/layout/Navbar";
 import GeminiChat from "@/components/ia/GeminiChat";
 
 export function ClientLayoutWrapper({ children }) {
+  const pathname = usePathname();
+  const isLoginRoute = pathname === "/login" || pathname?.startsWith("/login/");
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = useCallback(() => {
@@ -68,16 +72,24 @@ export function ClientLayoutWrapper({ children }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isSidebarOpen, closeSidebar]);
 
+  // Evita que al presionar "Atrás" tras cerrar sesión el navegador muestre caché (bfcache)
+  useEffect(() => {
+    if (isLoginRoute) return;
+    const handlePageShow = (event) => {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, [isLoginRoute]);
+
+  if (isLoginRoute) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="flex flex-1 min-h-screen w-full relative bg-autumn-50/50 text-gray-900 antialiased selection:bg-autumn-200 selection:text-autumn-900">
-      {/* Botón Accesible "Saltar al contenido principal" */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-autumn-600 focus:text-white focus:rounded-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-autumn-500 transition-all"
-      >
-        Saltar al contenido principal
-      </a>
-
       {/* Backdrop para dispositivos móviles con animación de opacidad */}
       {isSidebarOpen && (
         <div
@@ -93,7 +105,7 @@ export function ClientLayoutWrapper({ children }) {
       {/* Contenedor principal de la aplicación */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden">
         <Navbar onMenuToggle={toggleSidebar} isSidebarOpen={isSidebarOpen} />
-        
+
         {/* Asistente virtual flotante */}
         <GeminiChat />
 

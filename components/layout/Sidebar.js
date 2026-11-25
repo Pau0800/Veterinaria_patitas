@@ -5,6 +5,7 @@ import PropTypes from "prop-types";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useApp } from "@/context/AppContext";
+import { getAllowedSidebarItems } from "@/lib/permissions";
 import {
   LayoutDashboard,
   Users,
@@ -14,70 +15,28 @@ import {
   Syringe,
   BedDouble,
   Pill,
+  UserCog,
   X,
   Stethoscope,
   ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/**
- * Configuración inmutable de la navegación lateral.
- * Declarada fuera del componente para evitar reasignaciones en memoria durante cada renderizado.
- */
-const NAVIGATION_ITEMS = [
-  {
-    name: "Dashboard",
-    href: "/",
-    icon: LayoutDashboard,
-    roles: ["Administrador", "Veterinario", "Recepcionista", "Cliente"],
-  },
-  {
-    name: "Clientes",
-    href: "/clientes",
-    icon: Users,
-    roles: ["Administrador", "Recepcionista"],
-  },
-  {
-    name: "Mascotas",
-    href: "/mascotas",
-    icon: Dog,
-    roles: ["Administrador", "Veterinario", "Recepcionista", "Cliente"],
-  },
-  {
-    name: "Turnos",
-    href: "/turnos",
-    icon: CalendarCheck,
-    roles: ["Administrador", "Veterinario", "Recepcionista", "Cliente"],
-  },
-  {
-    name: "Historias Clínicas",
-    href: "/historias-clinicas",
-    icon: FileSpreadsheet,
-    roles: ["Administrador", "Veterinario", "Recepcionista", "Cliente"],
-  },
-  {
-    name: "Vacunas",
-    href: "/vacunas",
-    icon: Syringe,
-    roles: ["Administrador", "Veterinario", "Recepcionista", "Cliente"],
-  },
-  {
-    name: "Internaciones",
-    href: "/internaciones",
-    icon: BedDouble,
-    roles: ["Administrador", "Veterinario"],
-  },
-  {
-    name: "Farmacia & Stock",
-    href: "/farmacia",
-    icon: Pill,
-    roles: ["Administrador", "Veterinario"],
-  },
-];
+const ICON_MAP = {
+  LayoutDashboard,
+  Users,
+  Dog,
+  CalendarCheck,
+  FileSpreadsheet,
+  Syringe,
+  BedDouble,
+  Pill,
+  UserCog,
+};
 
 export function Sidebar({ isOpen = false, onClose = () => {} }) {
   const pathname = usePathname();
-  const { currentRole = "Invitado" } = useApp() || {};
+  const { userRole = null, currentRole = "Invitado" } = useApp() || {};
 
   // Cierre del menú mediante tecla Escape para mejorar accesibilidad por teclado
   const handleKeyDown = useCallback(
@@ -98,10 +57,10 @@ export function Sidebar({ isOpen = false, onClose = () => {} }) {
     };
   }, [isOpen, handleKeyDown]);
 
-  // Filtrado de opciones según el rol del usuario autenticado
+  // Filtrado dinámico de opciones desde lib/permissions.js según el rol autenticado
   const filteredNavItems = useMemo(() => {
-    return NAVIGATION_ITEMS.filter((item) => item.roles.includes(currentRole));
-  }, [currentRole]);
+    return getAllowedSidebarItems(userRole);
+  }, [userRole]);
 
   // Determina si una ruta coincide exactamente o si es una subruta anidada activa
   const isItemActive = (href) => {
@@ -168,13 +127,13 @@ export function Sidebar({ isOpen = false, onClose = () => {} }) {
         <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto custom-scrollbar">
           <div className="px-3 mb-2 flex items-center justify-between">
             <span className="text-[10px] font-extrabold text-autumn-400 uppercase tracking-wider">
-              Menú {currentRole}
+              Menú {currentRole || "Sistema"}
             </span>
             <span className="h-px flex-1 bg-autumn-800/60 ml-2" />
           </div>
 
           {filteredNavItems.map((item) => {
-            const Icon = item.icon;
+            const Icon = ICON_MAP[item.iconKey] || LayoutDashboard;
             const active = isItemActive(item.href);
 
             return (
@@ -217,10 +176,10 @@ export function Sidebar({ isOpen = false, onClose = () => {} }) {
         <div className="p-3 m-3 rounded-xl bg-autumn-950/40 border border-autumn-800/60 text-xs text-autumn-300 space-y-1.5 shrink-0">
           <div className="flex items-center space-x-2 font-semibold text-white">
             <ShieldCheck className="w-4 h-4 text-sage-400 shrink-0" aria-hidden="true" />
-            <span className="truncate">Sistema 100% Vercel Ready</span>
+            <span className="truncate">Acceso Protegido</span>
           </div>
           <p className="text-[11px] text-autumn-300/70 leading-relaxed font-normal">
-            Next.js App Router + Supabase DB
+            Supabase Auth + Control por Rol
           </p>
         </div>
       </aside>

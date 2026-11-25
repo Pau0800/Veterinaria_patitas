@@ -79,11 +79,16 @@ const EmptyChartState = ({ message }) => (
   </div>
 );
 
-export function DashboardCharts({ appointments = [], vaccines = [], pharmacy = [] }) {
+export function DashboardCharts({
+  appointments = [],
+  vaccines = [],
+  pharmacy = [],
+  showPharmacy = true,
+}) {
   // 1. Procesamiento Memoizado de Turnos
   const { appointmentData, totalAppointments, confirmationRate } = useMemo(() => {
     const safeAppointments = Array.isArray(appointments) ? appointments : [];
-    
+
     const counts = safeAppointments.reduce((acc, app) => {
       const status = (app?.status || "solicitado").toLowerCase();
       acc[status] = (acc[status] || 0) + 1;
@@ -107,7 +112,7 @@ export function DashboardCharts({ appointments = [], vaccines = [], pharmacy = [
   // 2. Procesamiento Memoizado de Distribución por Especie (Procesa datos reales de appointments o muestra fallback estructurado)
   const speciesData = useMemo(() => {
     const safeAppointments = Array.isArray(appointments) ? appointments : [];
-    
+
     const counts = safeAppointments.reduce((acc, app) => {
       const species = app?.patient?.species || app?.species || "Perros";
       acc[species] = (acc[species] || 0) + 1;
@@ -115,16 +120,16 @@ export function DashboardCharts({ appointments = [], vaccines = [], pharmacy = [
     }, {});
 
     const hasDynamicData = Object.keys(counts).length > 0;
-    
+
     // Si hay datos dinámicos los usa, de lo contrario proporciona estructura inicial consistente
     const sourceData = hasDynamicData
       ? Object.entries(counts).map(([name, value]) => ({ name, value }))
       : [
-          { name: "Perros", value: 14 },
-          { name: "Gatos", value: 8 },
-          { name: "Aves", value: 3 },
-          { name: "Exóticos", value: 2 },
-        ];
+        { name: "Perros", value: 14 },
+        { name: "Gatos", value: 8 },
+        { name: "Aves", value: 3 },
+        { name: "Exóticos", value: 2 },
+      ];
 
     return sourceData.map((item, index) => ({
       ...item,
@@ -163,13 +168,15 @@ export function DashboardCharts({ appointments = [], vaccines = [], pharmacy = [
           icon={Syringe}
           colorClass="text-emerald-600 dark:text-emerald-400"
         />
-        <StatCard
-          title="Alertas Farmacia"
-          value={pharmacyStats.lowStock}
-          subtitle="Productos con bajo stock"
-          icon={Pill}
-          colorClass={pharmacyStats.lowStock > 0 ? "text-amber-600 dark:text-amber-400" : "text-slate-600 dark:text-slate-400"}
-        />
+        {showPharmacy && (
+          <StatCard
+            title="Alertas Farmacia"
+            value={pharmacyStats.lowStock}
+            subtitle="Productos con bajo stock"
+            icon={Pill}
+            colorClass={pharmacyStats.lowStock > 0 ? "text-amber-600 dark:text-amber-400" : "text-slate-600 dark:text-slate-400"}
+          />
+        )}
         <StatCard
           title="Especies Atendidas"
           value={speciesData.reduce((acc, curr) => acc + curr.value, 0)}
@@ -181,7 +188,7 @@ export function DashboardCharts({ appointments = [], vaccines = [], pharmacy = [
 
       {/* Sección Principal de Gráficos */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        
+
         {/* Gráfico 1: Estado de Turnos */}
         <Card className="flex flex-col dark:border-slate-800">
           <CardHeader>
@@ -296,4 +303,5 @@ DashboardCharts.propTypes = {
   ),
   vaccines: PropTypes.array,
   pharmacy: PropTypes.array,
+  showPharmacy: PropTypes.bool,
 };
