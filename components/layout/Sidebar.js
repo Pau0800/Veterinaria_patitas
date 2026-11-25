@@ -15,6 +15,7 @@ import {
   Syringe,
   BedDouble,
   Pill,
+  ClipboardList,
   UserCog,
   X,
   Stethoscope,
@@ -31,6 +32,7 @@ const ICON_MAP = {
   Syringe,
   BedDouble,
   Pill,
+  ClipboardList,
   UserCog,
 };
 

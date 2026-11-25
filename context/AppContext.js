@@ -17,7 +17,6 @@ import {
   INITIAL_VACCINES,
   INITIAL_HOSPITALIZATIONS,
   INITIAL_PHARMACY,
-  VETERINARIANS,
 } from "@/lib/mockData";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { getRoleLabel } from "@/lib/permissions";
@@ -98,6 +97,7 @@ export function AppProvider({ children, initialUser = null }) {
 
   // Usuario autenticado y rol real desde Supabase Auth + public.profiles
   const [user, setUser] = useState(initialUser);
+  const [veterinarians, setVeterinarians] = useState([]);
   const [clients, setClients] = useState(INITIAL_CLIENTS);
   const [pets, setPets] = useState(INITIAL_PETS);
   const [medicalRecords, setMedicalRecords] = useState(INITIAL_MEDICAL_RECORDS);
@@ -203,6 +203,162 @@ export function AppProvider({ children, initialUser = null }) {
       isCancelled = true;
     };
   }, [user, clients]);
+
+  // Carga dinámica de veterinarios reales desde public.profiles (role = 'veterinario', status = 'activo')
+  const refreshVeterinarians = useCallback(async () => {
+    if (!user) {
+      setVeterinarians([]);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/veterinarios", { cache: "no-store" });
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data?.veterinarians)) {
+          setVeterinarians(data.veterinarians);
+          return;
+        }
+      }
+    } catch {
+      // Fallback directo a Supabase client
+    }
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, user_id, full_name, role, status")
+          .eq("role", "veterinario")
+          .eq("status", "activo")
+          .order("full_name", { ascending: true });
+
+        if (!error && Array.isArray(data)) {
+          setVeterinarians(data);
+        }
+      } catch (err) {
+        console.error("[AppProvider] Error al cargar veterinarios:", err);
+      }
+    }
+  }, [user]);
+
+  useEffect(() => {
+    refreshVeterinarians();
+  }, [refreshVeterinarians]);
+
+  // Sincronización de turnos, historias clínicas, vacunas e internaciones desde Supabase
+  useEffect(() => {
+    if (!supabase || !user) return;
+    let isCancelled = false;
+
+    const loadClinicalData = async () => {
+      try {
+        const vetMap = new Map(veterinarians.map((v) => [v.id, v.full_name]));
+        const petMap = new Map(pets.map((p) => [p.id, p]));
+        const clientMap = new Map(clients.map((c) => [c.id, c.full_name]));
+
+        const [apptsRes, medRes, vaccRes, hospRes] = await Promise.all([
+          supabase
+            .from("appointments")
+            .select("*")
+            .order("appointment_date", { ascending: false }),
+          supabase
+            .from("medical_records")
+            .select("*")
+            .order("record_date", { ascending: false }),
+          supabase
+            .from("vaccines")
+            .select("*")
+            .order("application_date", { ascending: false }),
+          supabase
+            .from("hospitalizations")
+            .select("*")
+            .order("admission_date", { ascending: false }),
+        ]);
+
+        if (isCancelled) return;
+
+        if (!apptsRes.error && Array.isArray(apptsRes.data) && apptsRes.data.length > 0) {
+          const mappedAppts = apptsRes.data.map((row) => {
+            const assignedVetId = row.veterinarian_id || row.vet_id || "";
+            const pet = petMap.get(row.pet_id);
+            return {
+              ...row,
+              vet_id: assignedVetId,
+              veterinarian_id: assignedVetId,
+              vet_name: row.vet_name || vetMap.get(assignedVetId) || "Sin Asignar",
+              pet_name: row.pet_name || pet?.name || "Mascota",
+              client_name:
+                row.client_name ||
+                clientMap.get(row.client_id) ||
+                pet?.owner_name ||
+                "Cliente",
+            };
+          });
+          setAppointments(mappedAppts);
+          saveStorageItem(STORAGE_KEYS.APPOINTMENTS, mappedAppts);
+        }
+
+        if (!medRes.error && Array.isArray(medRes.data) && medRes.data.length > 0) {
+          const mappedMed = medRes.data.map((row) => {
+            const assignedVetId = row.veterinarian_id || row.vet_id || "";
+            const pet = petMap.get(row.pet_id);
+            return {
+              ...row,
+              vet_id: assignedVetId,
+              veterinarian_id: assignedVetId,
+              vet_name: row.vet_name || vetMap.get(assignedVetId) || "Veterinario",
+              pet_name: row.pet_name || pet?.name || "Mascota",
+            };
+          });
+          setMedicalRecords(mappedMed);
+          saveStorageItem(STORAGE_KEYS.MEDICAL, mappedMed);
+        }
+
+        if (!vaccRes.error && Array.isArray(vaccRes.data) && vaccRes.data.length > 0) {
+          const mappedVacc = vaccRes.data.map((row) => {
+            const assignedVetId = row.veterinarian_id || row.vet_id || "";
+            const pet = petMap.get(row.pet_id);
+            return {
+              ...row,
+              vet_id: assignedVetId,
+              veterinarian_id: assignedVetId,
+              vet_name: row.vet_name || vetMap.get(assignedVetId) || "Veterinario",
+              pet_name: row.pet_name || pet?.name || "Mascota",
+              owner_name: row.owner_name || pet?.owner_name || "Dueño",
+            };
+          });
+          setVaccines(mappedVacc);
+          saveStorageItem(STORAGE_KEYS.VACCINES, mappedVacc);
+        }
+
+        if (!hospRes.error && Array.isArray(hospRes.data) && hospRes.data.length > 0) {
+          const mappedHosp = hospRes.data.map((row) => {
+            const assignedVetId = row.veterinarian_id || row.vet_id || "";
+            const pet = petMap.get(row.pet_id);
+            return {
+              ...row,
+              vet_id: assignedVetId,
+              veterinarian_id: assignedVetId,
+              vet_name: row.vet_name || vetMap.get(assignedVetId) || "Veterinario",
+              pet_name: row.pet_name || pet?.name || "Mascota",
+              species: row.species || pet?.species || "Canino",
+              owner_name: row.owner_name || pet?.owner_name || "Dueño",
+            };
+          });
+          setHospitalizations(mappedHosp);
+          saveStorageItem(STORAGE_KEYS.HOSPITALIZATIONS, mappedHosp);
+        }
+      } catch (err) {
+        console.error("[AppProvider] Error al sincronizar actividad clínica:", err);
+      }
+    };
+
+    loadClinicalData();
+    return () => {
+      isCancelled = true;
+    };
+  }, [user, veterinarians, pets, clients]);
 
   // Cierre de sesión real en Supabase Auth + limpieza de cookies de servidor
   const signOut = useCallback(async () => {
@@ -482,16 +638,57 @@ export function AppProvider({ children, initialUser = null }) {
 
   // --- MEDICAL RECORD ACTIONS ---
   const addMedicalRecord = useCallback(
-    (newRecord) => {
+    async (newRecord) => {
       const pet = pets.find((p) => p.id === newRecord.pet_id);
-      const vet = VETERINARIANS.find((v) => v.id === newRecord.vet_id);
+      const assignedVetId = newRecord.veterinarian_id || newRecord.vet_id || "";
+      const vet = veterinarians.find(
+        (v) => v.id === assignedVetId || v.user_id === assignedVetId
+      );
+      const vetName = vet?.full_name || newRecord.vet_name || "Veterinario";
+      const petName = pet ? pet.name : newRecord.pet_name || "Desconocido";
+
+      let persistedRow = null;
+      if (supabase && user && isUuid(newRecord.pet_id)) {
+        try {
+          const { data, error } = await supabase
+            .from("medical_records")
+            .insert({
+              pet_id: newRecord.pet_id,
+              vet_id: isUuid(assignedVetId) ? assignedVetId : null,
+              veterinarian_id: isUuid(assignedVetId) ? assignedVetId : null,
+              vet_name: vetName,
+              pet_name: petName,
+              record_date: newRecord.record_date || getLocalDateString(),
+              type: newRecord.type || "Consulta General",
+              title: newRecord.title,
+              description: newRecord.description,
+              diagnosis: newRecord.diagnosis || null,
+              treatment: newRecord.treatment || null,
+              medication_prescribed: newRecord.medication_prescribed || null,
+              attachment_url: newRecord.attachment_url || null,
+            })
+            .select("*")
+            .single();
+
+          if (error) {
+            console.error("[Supabase addMedicalRecord error]:", error.message);
+          } else {
+            persistedRow = data;
+          }
+        } catch (err) {
+          console.error("[Supabase addMedicalRecord exception]:", err);
+        }
+      }
 
       const item = {
         ...newRecord,
-        id: newRecord.id || generateUniqueId("m"),
-        pet_name: pet ? pet.name : newRecord.pet_name || "Desconocido",
-        vet_name: vet ? vet.full_name : newRecord.vet_name || "Veterinario",
-        record_date: newRecord.record_date || getLocalDateString(),
+        ...(persistedRow || {}),
+        id: persistedRow?.id || newRecord.id || generateUniqueId("m"),
+        vet_id: persistedRow?.veterinarian_id || persistedRow?.vet_id || assignedVetId,
+        veterinarian_id: persistedRow?.veterinarian_id || persistedRow?.vet_id || assignedVetId,
+        pet_name: petName,
+        vet_name: vetName,
+        record_date: persistedRow?.record_date || newRecord.record_date || getLocalDateString(),
       };
 
       setMedicalRecords((prev) => {
@@ -502,26 +699,71 @@ export function AppProvider({ children, initialUser = null }) {
 
       return item;
     },
-    [pets]
+    [pets, veterinarians, user]
   );
 
   // --- APPOINTMENT ACTIONS ---
   const addAppointment = useCallback(
-    (newAppt) => {
+    async (newAppt) => {
       const pet = pets.find((p) => p.id === newAppt.pet_id);
       const client = clients.find(
         (c) => c.id === (newAppt.client_id || pet?.owner_id)
       );
-      const vet = VETERINARIANS.find((v) => v.id === newAppt.vet_id);
+      const assignedVetId = newAppt.veterinarian_id || newAppt.vet_id || "";
+      const vet = veterinarians.find(
+        (v) => v.id === assignedVetId || v.user_id === assignedVetId
+      );
+
+      const petName = pet ? pet.name : newAppt.pet_name || "Mascota";
+      const clientName = client
+        ? client.full_name
+        : pet?.owner_name || newAppt.client_name || "Cliente";
+      const vetName = vet ? vet.full_name : newAppt.vet_name || "Sin Asignar";
+      const clientId = newAppt.client_id || pet?.owner_id || null;
+
+      let persistedRow = null;
+      if (supabase && user) {
+        try {
+          const { data, error } = await supabase
+            .from("appointments")
+            .insert({
+              pet_id: isUuid(newAppt.pet_id) ? newAppt.pet_id : null,
+              client_id: isUuid(clientId) ? clientId : null,
+              vet_id: isUuid(assignedVetId) ? assignedVetId : null,
+              veterinarian_id: isUuid(assignedVetId) ? assignedVetId : null,
+              vet_name: vetName,
+              pet_name: petName,
+              client_name: clientName,
+              appointment_date: newAppt.appointment_date || getLocalDateString(),
+              appointment_time: newAppt.appointment_time || "10:00",
+              reason: newAppt.reason,
+              status: newAppt.status || "solicitado",
+              notes: newAppt.notes || null,
+            })
+            .select("*")
+            .single();
+
+          if (error) {
+            console.error("[Supabase addAppointment error]:", error.message);
+          } else {
+            persistedRow = data;
+          }
+        } catch (err) {
+          console.error("[Supabase addAppointment exception]:", err);
+        }
+      }
 
       const item = {
         ...newAppt,
-        id: newAppt.id || generateUniqueId("a"),
-        pet_name: pet ? pet.name : newAppt.pet_name || "Mascota",
-        client_name: client ? client.full_name : newAppt.client_name || "Cliente",
-        vet_name: vet ? vet.full_name : newAppt.vet_name || "Sin Asignar",
-        status: newAppt.status || "solicitado",
-        created_at: getLocalDateString(),
+        ...(persistedRow || {}),
+        id: persistedRow?.id || newAppt.id || generateUniqueId("a"),
+        vet_id: persistedRow?.veterinarian_id || persistedRow?.vet_id || assignedVetId,
+        veterinarian_id: persistedRow?.veterinarian_id || persistedRow?.vet_id || assignedVetId,
+        pet_name: petName,
+        client_name: clientName,
+        vet_name: vetName,
+        status: persistedRow?.status || newAppt.status || "solicitado",
+        created_at: persistedRow?.created_at || getLocalDateString(),
       };
 
       setAppointments((prev) => {
@@ -532,34 +774,95 @@ export function AppProvider({ children, initialUser = null }) {
 
       return item;
     },
-    [pets, clients]
+    [pets, clients, veterinarians, user]
   );
 
-  const updateAppointmentStatus = useCallback((id, newStatus) => {
-    setAppointments((prev) => {
-      const updated = prev.map((a) =>
-        a.id === id ? { ...a, status: newStatus } : a
-      );
-      saveStorageItem(STORAGE_KEYS.APPOINTMENTS, updated);
-      return updated;
-    });
-  }, []);
+  const updateAppointmentStatus = useCallback(
+    async (id, newStatus) => {
+      if (supabase && user && isUuid(id)) {
+        try {
+          const { error } = await supabase
+            .from("appointments")
+            .update({ status: newStatus })
+            .eq("id", id);
+          if (error) {
+            console.error("[Supabase updateAppointmentStatus error]:", error.message);
+          }
+        } catch (err) {
+          console.error("[Supabase updateAppointmentStatus exception]:", err);
+        }
+      }
+
+      setAppointments((prev) => {
+        const updated = prev.map((a) =>
+          a.id === id ? { ...a, status: newStatus } : a
+        );
+        saveStorageItem(STORAGE_KEYS.APPOINTMENTS, updated);
+        return updated;
+      });
+    },
+    [user]
+  );
 
   const updateAppointment = useCallback(
-    (updatedAppointment) => {
+    async (updatedAppointment) => {
       const pet = pets.find((p) => p.id === updatedAppointment.pet_id);
       const client = clients.find(
         (c) => c.id === (updatedAppointment.client_id || pet?.owner_id)
       );
-      const vet = updatedAppointment.vet_id
-        ? VETERINARIANS.find((v) => v.id === updatedAppointment.vet_id)
+      const assignedVetId =
+        updatedAppointment.veterinarian_id || updatedAppointment.vet_id || "";
+      const vet = assignedVetId
+        ? veterinarians.find(
+            (v) => v.id === assignedVetId || v.user_id === assignedVetId
+          )
         : null;
+
+      const vetName = vet ? vet.full_name : updatedAppointment.vet_name;
+      const petName = pet ? pet.name : updatedAppointment.pet_name;
+      const clientName = client
+        ? client.full_name
+        : pet?.owner_name || updatedAppointment.client_name;
+
+      if (supabase && user && isUuid(updatedAppointment.id)) {
+        try {
+          const { error } = await supabase
+            .from("appointments")
+            .update({
+              pet_id: isUuid(updatedAppointment.pet_id)
+                ? updatedAppointment.pet_id
+                : null,
+              client_id: isUuid(updatedAppointment.client_id)
+                ? updatedAppointment.client_id
+                : null,
+              vet_id: isUuid(assignedVetId) ? assignedVetId : null,
+              veterinarian_id: isUuid(assignedVetId) ? assignedVetId : null,
+              vet_name: vetName,
+              pet_name: petName,
+              client_name: clientName,
+              appointment_date: updatedAppointment.appointment_date,
+              appointment_time: updatedAppointment.appointment_time,
+              reason: updatedAppointment.reason,
+              status: updatedAppointment.status,
+              notes: updatedAppointment.notes || null,
+            })
+            .eq("id", updatedAppointment.id);
+
+          if (error) {
+            console.error("[Supabase updateAppointment error]:", error.message);
+          }
+        } catch (err) {
+          console.error("[Supabase updateAppointment exception]:", err);
+        }
+      }
 
       const item = {
         ...updatedAppointment,
-        pet_name: pet ? pet.name : updatedAppointment.pet_name,
-        client_name: client ? client.full_name : updatedAppointment.client_name,
-        vet_name: vet ? vet.full_name : updatedAppointment.vet_name,
+        vet_id: assignedVetId,
+        veterinarian_id: assignedVetId,
+        pet_name: petName,
+        client_name: clientName,
+        vet_name: vetName,
       };
 
       setAppointments((prev) => {
@@ -568,20 +871,112 @@ export function AppProvider({ children, initialUser = null }) {
         return updated;
       });
     },
-    [pets, clients]
+    [pets, clients, veterinarians, user]
+  );
+
+  const reassignAppointmentVet = useCallback(
+    async (appointmentId, newVetId) => {
+      const targetVet = veterinarians.find(
+        (v) => v.id === newVetId || v.user_id === newVetId
+      );
+      if (!targetVet) {
+        throw new Error("No se encontró el veterinario seleccionado.");
+      }
+
+      if (isUuid(appointmentId)) {
+        const response = await fetch(`/api/turnos/${appointmentId}/reasignar`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ newVeterinarianId: targetVet.id }),
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(
+            data?.error || "No se pudo derivar el turno en Supabase."
+          );
+        }
+      }
+
+      setAppointments((prev) => {
+        const updated = prev.map((a) =>
+          a.id === appointmentId
+            ? {
+                ...a,
+                vet_id: targetVet.id,
+                veterinarian_id: targetVet.id,
+                vet_name: targetVet.full_name,
+              }
+            : a
+        );
+        saveStorageItem(STORAGE_KEYS.APPOINTMENTS, updated);
+        return updated;
+      });
+
+      return targetVet;
+    },
+    [veterinarians]
   );
 
   // --- VACCINE ACTIONS ---
   const addVaccine = useCallback(
-    (newVaccine) => {
+    async (newVaccine) => {
       const pet = pets.find((p) => p.id === newVaccine.pet_id);
+      const assignedVetId = newVaccine.veterinarian_id || newVaccine.vet_id || "";
+      const vet = veterinarians.find(
+        (v) => v.id === assignedVetId || v.user_id === assignedVetId
+      );
+      const vetName = vet?.full_name || newVaccine.vet_name || "Veterinario";
+      const petName = pet ? pet.name : newVaccine.pet_name || "Mascota";
+      const ownerName = pet ? pet.owner_name : newVaccine.owner_name || "Dueño";
+
+      let persistedRow = null;
+      if (supabase && user && isUuid(newVaccine.pet_id)) {
+        try {
+          const { data, error } = await supabase
+            .from("vaccines")
+            .insert({
+              pet_id: newVaccine.pet_id,
+              vaccine_name: newVaccine.vaccine_name,
+              application_date:
+                newVaccine.application_date || getLocalDateString(),
+              next_due_date:
+                newVaccine.next_due_date || getLocalDateString(),
+              vet_id: isUuid(assignedVetId) ? assignedVetId : null,
+              veterinarian_id: isUuid(assignedVetId) ? assignedVetId : null,
+              vet_name: vetName,
+              pet_name: petName,
+              owner_name: ownerName,
+              status: newVaccine.status || "aplicada",
+              notes: newVaccine.notes || null,
+            })
+            .select("*")
+            .single();
+
+          if (error) {
+            console.error("[Supabase addVaccine error]:", error.message);
+          } else {
+            persistedRow = data;
+          }
+        } catch (err) {
+          console.error("[Supabase addVaccine exception]:", err);
+        }
+      }
+
       const item = {
         ...newVaccine,
-        id: newVaccine.id || generateUniqueId("vcc"),
-        pet_name: pet ? pet.name : newVaccine.pet_name || "Mascota",
-        owner_name: pet ? pet.owner_name : newVaccine.owner_name || "Dueño",
-        status: newVaccine.status || "aplicada",
-        application_date: newVaccine.application_date || getLocalDateString(),
+        ...(persistedRow || {}),
+        id: persistedRow?.id || newVaccine.id || generateUniqueId("vcc"),
+        vet_id: persistedRow?.veterinarian_id || persistedRow?.vet_id || assignedVetId,
+        veterinarian_id: persistedRow?.veterinarian_id || persistedRow?.vet_id || assignedVetId,
+        vet_name: vetName,
+        pet_name: petName,
+        owner_name: ownerName,
+        status: persistedRow?.status || newVaccine.status || "aplicada",
+        application_date:
+          persistedRow?.application_date ||
+          newVaccine.application_date ||
+          getLocalDateString(),
       };
 
       setVaccines((prev) => {
@@ -592,20 +987,68 @@ export function AppProvider({ children, initialUser = null }) {
 
       return item;
     },
-    [pets]
+    [pets, veterinarians, user]
   );
 
   // --- HOSPITALIZATION ACTIONS ---
   const addHospitalization = useCallback(
-    (newHosp) => {
+    async (newHosp) => {
       const pet = pets.find((p) => p.id === newHosp.pet_id);
+      const assignedVetId = newHosp.veterinarian_id || newHosp.vet_id || "";
+      const vet = veterinarians.find(
+        (v) => v.id === assignedVetId || v.user_id === assignedVetId
+      );
+      const vetName = vet?.full_name || newHosp.vet_name || "Veterinario";
+      const petName = pet ? pet.name : newHosp.pet_name || "Mascota";
+      const species = pet ? pet.species : newHosp.species || "Canino";
+      const ownerName = pet ? pet.owner_name : newHosp.owner_name || "Dueño";
+
+      let persistedRow = null;
+      if (supabase && user && isUuid(newHosp.pet_id)) {
+        try {
+          const { data, error } = await supabase
+            .from("hospitalizations")
+            .insert({
+              pet_id: newHosp.pet_id,
+              vet_id: isUuid(assignedVetId) ? assignedVetId : null,
+              veterinarian_id: isUuid(assignedVetId) ? assignedVetId : null,
+              vet_name: vetName,
+              pet_name: petName,
+              species,
+              owner_name: ownerName,
+              admission_date: newHosp.admission_date || new Date().toISOString(),
+              reason: newHosp.reason,
+              daily_evolution: newHosp.daily_evolution || null,
+              treatment: newHosp.treatment || null,
+              status: "activa",
+            })
+            .select("*")
+            .single();
+
+          if (error) {
+            console.error("[Supabase addHospitalization error]:", error.message);
+          } else {
+            persistedRow = data;
+          }
+        } catch (err) {
+          console.error("[Supabase addHospitalization exception]:", err);
+        }
+      }
+
       const item = {
         ...newHosp,
-        id: newHosp.id || generateUniqueId("h"),
-        pet_name: pet ? pet.name : newHosp.pet_name || "Mascota",
-        species: pet ? pet.species : newHosp.species || "Canino",
-        owner_name: pet ? pet.owner_name : newHosp.owner_name || "Dueño",
-        admission_date: newHosp.admission_date || getLocalDateString(),
+        ...(persistedRow || {}),
+        id: persistedRow?.id || newHosp.id || generateUniqueId("h"),
+        vet_id: persistedRow?.veterinarian_id || persistedRow?.vet_id || assignedVetId,
+        veterinarian_id: persistedRow?.veterinarian_id || persistedRow?.vet_id || assignedVetId,
+        vet_name: vetName,
+        pet_name: petName,
+        species,
+        owner_name: ownerName,
+        admission_date:
+          persistedRow?.admission_date ||
+          newHosp.admission_date ||
+          getLocalDateString(),
         discharge_date: null,
         status: "activa",
       };
@@ -618,7 +1061,7 @@ export function AppProvider({ children, initialUser = null }) {
 
       return item;
     },
-    [pets]
+    [pets, veterinarians, user]
   );
 
   const dischargePet = useCallback((id) => {
@@ -685,6 +1128,8 @@ export function AppProvider({ children, initialUser = null }) {
       currentRole,
       signOut,
       activeClientId,
+      veterinarians,
+      refreshVeterinarians,
       clients,
       pets,
       medicalRecords,
@@ -703,6 +1148,7 @@ export function AppProvider({ children, initialUser = null }) {
       addAppointment,
       updateAppointment,
       updateAppointmentStatus,
+      reassignAppointmentVet,
       addVaccine,
       addHospitalization,
       dischargePet,
@@ -720,6 +1166,8 @@ export function AppProvider({ children, initialUser = null }) {
       currentRole,
       signOut,
       activeClientId,
+      veterinarians,
+      refreshVeterinarians,
       clients,
       pets,
       medicalRecords,
@@ -737,6 +1185,7 @@ export function AppProvider({ children, initialUser = null }) {
       addAppointment,
       updateAppointment,
       updateAppointmentStatus,
+      reassignAppointmentVet,
       addVaccine,
       addHospitalization,
       dischargePet,

@@ -5,6 +5,7 @@ import PropTypes from "prop-types";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { ROLES, getRoleLabel, normalizeRole } from "@/lib/permissions";
+import { useApp } from "@/context/AppContext";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -87,6 +88,7 @@ export function UsuariosClient({
   currentUserRole = null,
 }) {
   const router = useRouter();
+  const { refreshVeterinarians } = useApp() || {};
   const isAdmin = normalizeRole(currentUserRole) === ROLES.ADMIN;
 
   const [users, setUsers] = useState(initialUsers);
@@ -201,6 +203,7 @@ export function UsuariosClient({
         )}). Ya puede iniciar sesión con ${parsed.data.email}.`
       );
       setIsModalOpen(false);
+      refreshVeterinarians?.();
       router.refresh();
     } catch {
       setServerError("Error de red al intentar crear el usuario.");

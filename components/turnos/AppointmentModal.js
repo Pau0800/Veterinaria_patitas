@@ -6,7 +6,6 @@ import { Modal } from "@/components/ui/Modal";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
-import { VETERINARIANS } from "@/lib/mockData";
 import { useApp } from "@/context/AppContext";
 import {
   Calendar,
@@ -64,7 +63,12 @@ export function AppointmentModal({
   onSubmit = async () => {},
   initialData = null,
 }) {
-  const { pets = [], clients = [] } = useApp() || {};
+  const {
+    pets = [],
+    clients = [],
+    veterinarians = [],
+    user = null,
+  } = useApp() || {};
 
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [errors, setErrors] = useState({});
@@ -81,14 +85,17 @@ export function AppointmentModal({
     }));
   }, [pets]);
 
-  // Mapeo memorizado para las opciones de veterinarios
+  // Mapeo memorizado para las opciones de veterinarios reales desde public.profiles
   const vetOptions = useMemo(() => {
-    const list = Array.isArray(VETERINARIANS) ? VETERINARIANS : [];
+    const list = Array.isArray(veterinarians) ? veterinarians : [];
+    if (list.length === 0) {
+      return [{ value: "", label: "Cargando veterinarios disponibles..." }];
+    }
     return list.map((v) => ({
       value: String(v.id),
-      label: `${v.full_name || v.name} (${v.specialization || "General"})`,
+      label: v.full_name || "Veterinario",
     }));
-  }, []);
+  }, [veterinarians]);
 
   // Sincronización e inicialización defensiva del formulario
   useEffect(() => {
@@ -99,7 +106,12 @@ export function AppointmentModal({
     }
 
     const todayString = new Date().toISOString().split("T")[0];
-    const defaultVetId = vetOptions.length > 0 ? vetOptions[0].value : "";
+    const loggedVetOption =
+      user?.role === "veterinario"
+        ? vetOptions.find((v) => v.value === String(user.id))
+        : null;
+    const defaultVetId =
+      loggedVetOption?.value || (vetOptions.length > 0 ? vetOptions[0].value : "");
     const defaultPetId = petOptions.length > 0 ? petOptions[0].value : "";
 
     if (initialData && typeof initialData === "object") {
@@ -110,7 +122,10 @@ export function AppointmentModal({
       setFormData({
         pet_id: initialData.pet_id ? String(initialData.pet_id) : defaultPetId,
         client_id: initialData.client_id ? String(initialData.client_id) : "",
-        vet_id: initialData.vet_id ? String(initialData.vet_id) : defaultVetId,
+        vet_id:
+          initialData.veterinarian_id || initialData.vet_id
+            ? String(initialData.veterinarian_id || initialData.vet_id)
+            : defaultVetId,
         appointment_date: formattedDate,
         appointment_time: initialData.appointment_time || "10:00",
         reason: initialData.reason || "",
@@ -130,7 +145,7 @@ export function AppointmentModal({
     }
 
     setErrors({});
-  }, [initialData, isOpen, petOptions, vetOptions, pets]);
+  }, [initialData, isOpen, petOptions, vetOptions, pets, user]);
 
   // Manejador unificado de cambios y actualización automática del dueño
   const handleChange = useCallback(
@@ -210,13 +225,14 @@ export function AppointmentModal({
       setIsSubmitting(true);
 
       const petList = Array.isArray(pets) ? pets : [];
-      const vetList = Array.isArray(VETERINARIANS) ? VETERINARIANS : [];
+      const vetList = Array.isArray(veterinarians) ? veterinarians : [];
 
       const selectedPet = petList.find((p) => String(p.id) === String(formData.pet_id));
       const selectedVet = vetList.find((v) => String(v.id) === String(formData.vet_id));
 
       const payload = {
         ...formData,
+        veterinarian_id: formData.vet_id,
         reason: formData.reason.trim(),
         notes: formData.notes.trim(),
         vet_name: selectedVet ? selectedVet.full_name || selectedVet.name : "Veterinario Asignado",

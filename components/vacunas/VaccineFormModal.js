@@ -5,7 +5,6 @@ import { Modal } from "@/components/ui/Modal";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
-import { VETERINARIANS } from "@/lib/mockData";
 import { useApp } from "@/context/AppContext";
 
 // Lista estática fuera del componente para no reallocar memoria en cada render
@@ -34,7 +33,7 @@ function getFormattedDate(offsetYears = 0) {
 }
 
 export function VaccineFormModal({ isOpen, onClose, onSubmit }) {
-  const { pets = [] } = useApp();
+  const { pets = [], veterinarians = [], user = null } = useApp();
 
   const [formData, setFormData] = useState({
     pet_id: "",
@@ -42,7 +41,7 @@ export function VaccineFormModal({ isOpen, onClose, onSubmit }) {
     custom_vaccine_name: "",
     application_date: getFormattedDate(0),
     next_due_date: getFormattedDate(1),
-    vet_id: VETERINARIANS?.[0]?.id || "",
+    vet_id: "",
     notes: "",
   });
 
@@ -51,18 +50,25 @@ export function VaccineFormModal({ isOpen, onClose, onSubmit }) {
 
   // Reiniciar estado cada vez que el modal se abre
   const resetForm = useCallback(() => {
+    const loggedVet =
+      user?.role === "veterinario"
+        ? veterinarians.find((v) => String(v.id) === String(user.id))
+        : null;
+    const defaultVetId =
+      loggedVet?.id || (veterinarians.length > 0 ? veterinarians[0].id : "");
+
     setFormData({
       pet_id: pets.length > 0 ? pets[0].id : "",
       vaccine_name: COMMON_VACCINES[0].value,
       custom_vaccine_name: "",
       application_date: getFormattedDate(0),
       next_due_date: getFormattedDate(1),
-      vet_id: VETERINARIANS?.[0]?.id || "",
+      vet_id: defaultVetId,
       notes: "",
     });
     setErrors({});
     setIsSubmitting(false);
-  }, [pets]);
+  }, [pets, veterinarians, user]);
 
   useEffect(() => {
     if (isOpen) {
@@ -79,11 +85,11 @@ export function VaccineFormModal({ isOpen, onClose, onSubmit }) {
   }, [pets]);
 
   const vetOptions = useMemo(() => {
-    return (VETERINARIANS || []).map((v) => ({
+    return (veterinarians || []).map((v) => ({
       value: v.id,
       label: v.full_name,
     }));
-  }, []);
+  }, [veterinarians]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -141,7 +147,9 @@ export function VaccineFormModal({ isOpen, onClose, onSubmit }) {
     setIsSubmitting(true);
 
     try {
-      const selectedVet = VETERINARIANS.find((v) => v.id === formData.vet_id);
+      const selectedVet = (veterinarians || []).find(
+        (v) => String(v.id) === String(formData.vet_id)
+      );
       const finalVaccineName =
         formData.vaccine_name === "Otra"
           ? formData.custom_vaccine_name.trim()
@@ -153,6 +161,7 @@ export function VaccineFormModal({ isOpen, onClose, onSubmit }) {
         application_date: formData.application_date,
         next_due_date: formData.next_due_date,
         vet_id: formData.vet_id,
+        veterinarian_id: formData.vet_id,
         vet_name: selectedVet ? selectedVet.full_name : "Veterinario",
         notes: formData.notes.trim(),
         status: "aplicada",

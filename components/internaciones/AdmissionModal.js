@@ -6,19 +6,18 @@ import { Modal } from "@/components/ui/Modal";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
-import { VETERINARIANS } from "@/lib/mockData";
 import { useApp } from "@/context/AppContext";
 
 const INITIAL_FORM_VALUES = {
   pet_id: "",
-  vet_id: VETERINARIANS[0]?.id ?? "",
+  vet_id: "",
   reason: "",
   daily_evolution: "Ingreso en observación. Constantes vitales estables.",
   treatment: "Fluidoterapia de soporte.",
 };
 
 export function AdmissionModal({ isOpen, onClose, onSubmit }) {
-  const { pets = [] } = useApp();
+  const { pets = [], veterinarians = [], user = null } = useApp();
 
   const [formData, setFormData] = useState(INITIAL_FORM_VALUES);
   const [errors, setErrors] = useState({});
@@ -27,15 +26,22 @@ export function AdmissionModal({ isOpen, onClose, onSubmit }) {
   // Sincronización y reseteo del formulario cuando el modal se abre o cambia la lista de mascotas
   useEffect(() => {
     if (isOpen) {
+      const loggedVet =
+        user?.role === "veterinario"
+          ? veterinarians.find((v) => String(v.id) === String(user.id))
+          : null;
+      const defaultVetId =
+        loggedVet?.id || (veterinarians.length > 0 ? veterinarians[0].id : "");
+
       setFormData({
         ...INITIAL_FORM_VALUES,
         pet_id: pets.length > 0 ? pets[0].id : "",
-        vet_id: VETERINARIANS[0]?.id ?? "",
+        vet_id: defaultVetId,
       });
       setErrors({});
       setIsSubmitting(false);
     }
-  }, [isOpen, pets]);
+  }, [isOpen, pets, veterinarians, user]);
 
   // Opciones memorizadas para evitar recálculos en re-renders innecesarios
   const petOptions = useMemo(() => {
@@ -46,11 +52,11 @@ export function AdmissionModal({ isOpen, onClose, onSubmit }) {
   }, [pets]);
 
   const vetOptions = useMemo(() => {
-    return VETERINARIANS.map((v) => ({
+    return (veterinarians || []).map((v) => ({
       value: v.id,
       label: v.full_name,
     }));
-  }, []);
+  }, [veterinarians]);
 
   // Manejador de cambios centralizado
   const handleChange = useCallback((field, value) => {
@@ -83,10 +89,13 @@ export function AdmissionModal({ isOpen, onClose, onSubmit }) {
 
     try {
       setIsSubmitting(true);
-      const selectedVet = VETERINARIANS.find((v) => v.id === formData.vet_id);
+      const selectedVet = (veterinarians || []).find(
+        (v) => String(v.id) === String(formData.vet_id)
+      );
 
       await onSubmit({
         ...formData,
+        veterinarian_id: formData.vet_id,
         reason: formData.reason.trim(),
         daily_evolution: formData.daily_evolution.trim(),
         treatment: formData.treatment.trim(),

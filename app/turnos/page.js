@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { AppointmentModal } from "@/components/turnos/AppointmentModal";
 import { PetAvatar } from "@/components/mascotas/PetAvatar";
-import { VETERINARIANS } from "@/lib/mockData";
 import { formatDate } from "@/lib/utils";
 import {
   CalendarCheck,
@@ -41,6 +40,7 @@ export default function AppointmentsPage() {
   const {
     appointments = [],
     pets = [],
+    veterinarians = [],
     updateAppointmentStatus,
     updateAppointment,
     addAppointment,
@@ -67,13 +67,13 @@ export default function AppointmentsPage() {
   const [editingAppt, setEditingAppt] = useState(null);
   const [isConfirmingCancel, setIsConfirmingCancel] = useState(null);
 
-  // Opciones memorizadas para selectores
+  // Opciones memorizadas para selectores (veterinarios reales desde public.profiles)
   const vetOptions = useMemo(
     () => [
       { value: "TODOS", label: "Todos los Veterinarios" },
-      ...VETERINARIANS.map((v) => ({ value: v.id, label: v.full_name })),
+      ...(veterinarians || []).map((v) => ({ value: v.id, label: v.full_name })),
     ],
-    []
+    [veterinarians]
   );
 
   const statusOptions = useMemo(

@@ -5,7 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
-import { VETERINARIANS as MOCK_VETERINARIANS } from "@/lib/mockData";
+import { useApp } from "@/context/AppContext";
 import { AlertCircle, Loader2, Save, X } from "lucide-react";
 
 // ----------------------------------------------------------------------
@@ -27,15 +27,26 @@ export function MedicalRecordModal({
   onClose,
   onSubmit,
   pets = [],
-  veterinarians = MOCK_VETERINARIANS,
+  veterinarians: propVeterinarians,
   defaultValues = null,
   isLoading: externalLoading = false,
 }) {
+  const { veterinarians: contextVeterinarians = [], user = null } = useApp() || {};
+  const veterinarians =
+    Array.isArray(propVeterinarians) && propVeterinarians.length > 0
+      ? propVeterinarians
+      : contextVeterinarians;
+
   // 1. Estado inicial memoizado dinámicamente
   const getInitialState = useCallback(() => {
     const today = new Date().toISOString().split("T")[0];
     const defaultPet = pets.length > 0 ? pets[0].id : "";
-    const defaultVet = veterinarians.length > 0 ? veterinarians[0].id : "";
+    const loggedVet =
+      user?.role === "veterinario"
+        ? veterinarians.find((v) => String(v.id) === String(user.id))
+        : null;
+    const defaultVet =
+      loggedVet?.id || (veterinarians.length > 0 ? veterinarians[0].id : "");
 
     return {
       pet_id: defaultPet,
@@ -49,7 +60,7 @@ export function MedicalRecordModal({
       record_date: today,
       ...defaultValues,
     };
-  }, [pets, veterinarians, defaultValues]);
+  }, [pets, veterinarians, defaultValues, user]);
 
   const [formData, setFormData] = useState(getInitialState);
   const [errors, setErrors] = useState({});
@@ -84,7 +95,7 @@ export function MedicalRecordModal({
       { value: "", label: "Seleccionar profesional..." },
       ...veterinarians.map((v) => ({
         value: v.id,
-        label: `${v.full_name} (${v.specialization})`,
+        label: v.full_name || "Veterinario",
       })),
     ],
     [veterinarians]
@@ -141,6 +152,7 @@ export function MedicalRecordModal({
 
       const payload = {
         ...formData,
+        veterinarian_id: formData.vet_id,
         vet_name: selectedVet ? selectedVet.full_name : "Veterinario No Especificado",
       };
 
