@@ -36,7 +36,7 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#fdf8f6",
+  themeColor: "#FAF6EF",
 };
 
 export default async function RootLayout({ children }) {
@@ -44,7 +44,7 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang="es" className={`${inter.variable} h-full scroll-smooth`}>
-      <body className="min-h-full bg-autumn-50 text-autumn-900 font-sans flex flex-col antialiased selection:bg-autumn-200 selection:text-autumn-900">
+      <body className="min-h-full bg-[#FAF6EF] text-[#2C2115] font-sans flex flex-col antialiased selection:bg-[#E6D8C3] selection:text-[#2C2115]">
         {/* Accesibilidad: Enlace directo al contenido para teclados/lectores de pantalla (WCAG 2.1) */}
         <a
           href="#main-content"

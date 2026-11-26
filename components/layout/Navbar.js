@@ -35,7 +35,7 @@ export function Navbar({ onMenuToggle, isSidebarOpen = false }) {
   };
 
   return (
-    <header className="sticky top-0 z-20 h-16 w-full bg-white/95 backdrop-blur-md border-b border-autumn-200 px-4 lg:px-8 flex items-center justify-between shadow-xs transition-colors duration-200">
+    <header className="sticky top-0 z-20 h-16 w-full bg-[#FFFDF9]/95 backdrop-blur-md border-b border-[#E6D8C3] px-4 lg:px-8 flex items-center justify-between shadow-xs transition-colors duration-200">
       {/* Sección Izquierda: Botón Hamburguesa y Título del Sistema */}
       <div className="flex items-center space-x-3">
         <button
@@ -44,16 +44,16 @@ export function Navbar({ onMenuToggle, isSidebarOpen = false }) {
           aria-label={isSidebarOpen ? "Cerrar menú principal" : "Abrir menú principal"}
           aria-expanded={isSidebarOpen}
           aria-controls="main-sidebar"
-          className="p-2 rounded-xl text-autumn-800 hover:bg-autumn-100/80 active:bg-autumn-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-autumn-500 transition-colors lg:hidden"
+          className="p-2 rounded-xl text-[#473621] hover:bg-[#F5EFE4] active:bg-[#E6D8C3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B84A14] transition-colors lg:hidden"
         >
           <Menu className="w-5 h-5" aria-hidden="true" />
         </button>
 
         <div>
-          <h1 className="text-base lg:text-lg font-extrabold text-autumn-900 leading-tight tracking-tight">
+          <h1 className="text-base lg:text-lg font-extrabold text-[#2C2115] leading-tight tracking-tight">
             Gestión Veterinaria Integrada
           </h1>
-          <p className="text-xs text-autumn-800/70 hidden sm:block font-medium">
+          <p className="text-xs text-[#6E4B2A] hidden sm:block font-medium">
             Panel de {roleLabel}
           </p>
         </div>

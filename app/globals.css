@@ -23,35 +23,35 @@
   --font-sans: 'Inter', system-ui, -apple-system,
     BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  /* Colores principales */
-  --color-background: #FDFBF7;
-  --color-surface: #FFFFFF;
-  --color-surface-secondary: #F5EFE6;
+  /* Colores principales (Autumn Palette) */
+  --color-background: #FAF6EF;
+  --color-surface: #FFFDF9;
+  --color-surface-secondary: #F5EFE4;
 
-  --color-text: #2C221E;
-  --color-text-secondary: #74665E;
-  --color-text-muted: #9B8D84;
+  --color-text: #2C2115;
+  --color-text-secondary: #6E4B2A;
+  --color-text-muted: #473621;
 
   /* Colores de acento */
-  --color-primary: #D97706;
-  --color-primary-hover: #B96305;
-  --color-secondary: #C85A32;
-  --color-secondary-hover: #A94727;
+  --color-primary: #B84A14;
+  --color-primary-hover: #8A2E0E;
+  --color-secondary: #A03813;
+  --color-secondary-hover: #8A2E0E;
 
-  /* Estados */
+  /* Estados (verdes y rojos conservados, info en ámbar/caramelo cálido) */
   --color-success: #16845B;
   --color-danger: #DC4545;
-  --color-warning: #E5A000;
-  --color-info: #3985C9;
+  --color-warning: #D48A1C;
+  --color-info: #C4832B;
 
   /* Bordes */
-  --color-border: #E9DFD3;
-  --color-border-strong: #D8C8B7;
+  --color-border: #E6D8C3;
+  --color-border-strong: #D6C2A3;
 
   /* Sombras */
-  --shadow-sm: 0 1px 3px rgba(44, 34, 30, 0.06);
-  --shadow-md: 0 4px 12px rgba(44, 34, 30, 0.08);
-  --shadow-lg: 0 10px 30px rgba(44, 34, 30, 0.10);
+  --shadow-sm: 0 1px 3px rgba(44, 33, 21, 0.06);
+  --shadow-md: 0 4px 12px rgba(44, 33, 21, 0.08);
+  --shadow-lg: 0 10px 30px rgba(44, 33, 21, 0.10);
 
   /* Radios */
   --radius-sm: 6px;

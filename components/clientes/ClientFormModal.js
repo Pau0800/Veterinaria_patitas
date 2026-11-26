@@ -166,7 +166,7 @@ export function ClientFormModal({ isOpen, onClose, onSubmit, initialData }) {
             error={errors.full_name}
             aria-invalid={Boolean(errors.full_name)}
             aria-describedby={errors.full_name ? "full_name-error" : undefined}
-            icon={<User className="w-4 h-4 text-gray-400" />}
+            icon={<User className="w-4 h-4 text-[#6E4B2A]" />}
             required
           />
         </div>
@@ -184,7 +184,7 @@ export function ClientFormModal({ isOpen, onClose, onSubmit, initialData }) {
             error={errors.email}
             aria-invalid={Boolean(errors.email)}
             aria-describedby={errors.email ? "email-error" : undefined}
-            icon={<Mail className="w-4 h-4 text-gray-400" />}
+            icon={<Mail className="w-4 h-4 text-[#6E4B2A]" />}
             required
           />
         </div>
@@ -202,7 +202,7 @@ export function ClientFormModal({ isOpen, onClose, onSubmit, initialData }) {
             error={errors.phone}
             aria-invalid={Boolean(errors.phone)}
             aria-describedby={errors.phone ? "phone-error" : undefined}
-            icon={<Phone className="w-4 h-4 text-gray-400" />}
+            icon={<Phone className="w-4 h-4 text-[#6E4B2A]" />}
           />
         </div>
 
@@ -218,12 +218,12 @@ export function ClientFormModal({ isOpen, onClose, onSubmit, initialData }) {
             error={errors.address}
             aria-invalid={Boolean(errors.address)}
             aria-describedby={errors.address ? "address-error" : undefined}
-            icon={<MapPin className="w-4 h-4 text-gray-400" />}
+            icon={<MapPin className="w-4 h-4 text-[#6E4B2A]" />}
           />
         </div>
 
         {/* Acciones del Formulario */}
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-5 mt-6 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-5 mt-6 border-t border-[#E6D8C3]">
           <Button
             type="button"
             variant="outline"

@@ -138,28 +138,28 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-autumn-50 via-autumn-100/70 to-sage-50 px-4 py-10">
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#FAF6EF] via-[#F5EFE4] to-[#E6D8C3]/50 px-4 py-10">
       <div className="w-full max-w-md space-y-6">
         {/* Identidad VetOtoño */}
         <div className="text-center space-y-3">
-          <div className="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-autumn-500 via-amberGold-500 to-amber-600 flex items-center justify-center text-white shadow-autumn-md">
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-[#B84A14] via-[#D48A1C] to-[#A03813] flex items-center justify-center text-white shadow-autumn-md">
             <Stethoscope className="w-7 h-7" aria-hidden="true" />
           </div>
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-autumn-900">
-              Vet<span className="text-autumn-500">Otoño</span>
+            <h1 className="text-3xl font-extrabold tracking-tight text-[#2C2115]">
+              Vet<span className="text-[#B84A14]">Otoño</span>
             </h1>
-            <p className="text-sm text-autumn-800/75 mt-1 font-medium">
+            <p className="text-sm text-[#6E4B2A] mt-1 font-medium">
               Sistema Integral de Gestión Veterinaria
             </p>
           </div>
         </div>
 
         {/* Tarjeta de Login */}
-        <div className="bg-white rounded-2xl border border-autumn-200 shadow-autumn-lg p-6 sm:p-8 space-y-6">
+        <div className="bg-[#FFFDF9] rounded-2xl border border-[#E6D8C3] shadow-autumn-lg p-6 sm:p-8 space-y-6">
           <div className="space-y-1">
-            <h2 className="text-xl font-bold text-autumn-900">Iniciar sesión</h2>
-            <p className="text-xs text-autumn-800/70">
+            <h2 className="text-xl font-bold text-[#2C2115]">Iniciar sesión</h2>
+            <p className="text-xs text-[#6E4B2A]">
               Ingresá con tus credenciales institucionales para acceder al panel.
             </p>
           </div>

@@ -13,9 +13,9 @@ export const Card = React.forwardRef(function Card(
     <div
       ref={ref}
       className={cn(
-        "rounded-xl border border-autumn-200 bg-white text-autumn-900 shadow-autumn-sm overflow-hidden transition-all duration-200",
+        "rounded-xl border border-[#E6D8C3] bg-[#FFFDF9] text-[#2C2115] shadow-autumn-sm overflow-hidden transition-all duration-200",
         interactive &&
-          "hover:border-autumn-300 hover:shadow-autumn-md active:scale-[0.995] cursor-pointer",
+          "hover:border-[#C4832B] hover:shadow-autumn-md active:scale-[0.995] cursor-pointer",
         className
       )}
       {...props}

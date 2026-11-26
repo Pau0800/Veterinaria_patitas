@@ -4,17 +4,17 @@ import { cn } from "@/lib/utils";
 // Variantes estilizadas con Tailwind CSS
 const VARIANTS = {
   primary:
-    "bg-autumn-500 text-white hover:bg-autumn-600 focus-visible:ring-autumn-500 shadow-sm hover:shadow-md",
+    "bg-[#B84A14] text-white hover:bg-[#8A2E0E] focus-visible:ring-[#A03813] shadow-sm hover:shadow-md",
   secondary:
-    "bg-autumn-100 text-autumn-900 hover:bg-autumn-200 focus-visible:ring-autumn-300 border border-autumn-200/80",
+    "bg-[#F5EFE4] text-[#2C2115] hover:bg-[#E6D8C3] focus-visible:ring-[#D48A1C] border border-[#E6D8C3]",
   amber:
-    "bg-amberGold-500 text-white hover:bg-amberGold-600 focus-visible:ring-amberGold-500 shadow-sm hover:shadow-md",
+    "bg-[#D48A1C] text-white hover:bg-[#AD5D1E] focus-visible:ring-[#D48A1C] shadow-sm hover:shadow-md",
   sage:
     "bg-sage-500 text-white hover:bg-sage-600 focus-visible:ring-sage-500 shadow-sm hover:shadow-md",
   outline:
-    "border border-autumn-300 text-autumn-800 hover:bg-autumn-100/70 focus-visible:ring-autumn-400 bg-transparent",
+    "border border-[#E6D8C3] text-[#473621] hover:bg-[#F5EFE4] focus-visible:ring-[#B84A14] bg-[#FFFDF9]",
   ghost:
-    "text-autumn-800 hover:bg-autumn-100/70 focus-visible:ring-autumn-300 bg-transparent",
+    "text-[#473621] hover:bg-[#F5EFE4] focus-visible:ring-[#D48A1C] bg-transparent",
   danger:
     "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500 shadow-sm hover:shadow-md",
 };

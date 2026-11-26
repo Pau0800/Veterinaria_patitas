@@ -184,7 +184,7 @@ export function VaccineFormModal({ isOpen, onClose, onSubmit }) {
     <Modal isOpen={isOpen} onClose={onClose} title="Registrar Aplicación de Vacuna">
       {pets.length === 0 ? (
         <div className="py-6 text-center space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+          <p className="text-sm text-[#6E4B2A]">
             No hay mascotas registradas en el sistema para asignar una vacuna.
           </p>
           <Button type="button" variant="outline" onClick={onClose}>

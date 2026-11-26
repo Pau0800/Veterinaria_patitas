@@ -192,7 +192,7 @@ export function MedicalRecordModal({
     >
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
         {/* Encabezado e Instrucciones */}
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-[#6E4B2A]">
           Complete los detalles de la atención médica. Los campos marcados con (*) son obligatorios.
         </p>
 
@@ -340,7 +340,7 @@ export function MedicalRecordModal({
         </div>
 
         {/* Barra de Acciones del Formulario */}
-        <div className="flex items-center justify-end space-x-3 pt-5 border-t border-slate-200 dark:border-slate-700">
+        <div className="flex items-center justify-end space-x-3 pt-5 border-t border-[#E6D8C3]">
           <Button
             type="button"
             variant="outline"

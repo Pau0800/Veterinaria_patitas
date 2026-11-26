@@ -8,23 +8,23 @@ import { cn } from "@/lib/utils";
  */
 const VARIANTS = {
   default:
-    "bg-autumn-100 text-autumn-800 border-autumn-300 dark:bg-autumn-900/40 dark:text-autumn-300 dark:border-autumn-700/50",
+    "bg-[#F5EFE4] text-[#473621] border-[#E6D8C3]",
   primary:
-    "bg-autumn-500 text-white border-autumn-600 shadow-xs dark:bg-autumn-600 dark:border-autumn-500",
+    "bg-[#B84A14] text-white border-[#A03813] shadow-xs",
   secondary:
-    "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700",
+    "bg-[#4B4118]/10 text-[#4B4118] border-[#4B4118]/25",
   success:
     "bg-sage-100 text-sage-800 border-sage-300 dark:bg-sage-950/50 dark:text-sage-300 dark:border-sage-800",
   warning:
-    "bg-amberGold-100 text-amberGold-900 border-amberGold-300 dark:bg-amberGold-950/50 dark:text-amberGold-300 dark:border-amberGold-800",
+    "bg-[#F9EEDB] text-[#6E4B2A] border-[#D48A1C]/40",
   danger:
     "bg-red-100 text-red-800 border-red-300 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800",
   info:
-    "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800",
+    "bg-[#FFFBF2] text-[#AD5D1E] border-[#C4832B]/45",
   outline:
-    "bg-transparent text-slate-700 border-slate-300 dark:text-slate-300 dark:border-slate-600",
+    "bg-transparent text-[#473621] border-[#E6D8C3]",
   ghost:
-    "bg-transparent text-slate-600 border-transparent dark:text-slate-400",
+    "bg-transparent text-[#6E4B2A] border-transparent",
 };
 
 /**

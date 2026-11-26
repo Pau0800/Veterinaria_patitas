@@ -13,30 +13,26 @@ import {
   Pie,
   Cell,
   CartesianGrid,
-  Legend,
 } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/Card";
-import { Calendar, Syringe, Pill, AlertCircle, CheckCircle2, Clock, XCircle, RefreshCw } from "lucide-react";
+import { Calendar, Syringe, Pill, AlertCircle, CheckCircle2 } from "lucide-react";
 
-// Paleta de colores profesional con soporte semántico
+// Paleta otoñal cálida manteniendo verde para Confirmados y rojo para Cancelados
 const COLOR_PALETTE = {
-  confirmado: { bg: "#10B981", text: "text-emerald-600 dark:text-emerald-400", label: "Confirmados" },
-  solicitado: { bg: "#F59E0B", text: "text-amber-600 dark:text-amber-400", label: "Solicitados" },
-  cancelado: { bg: "#EF4444", text: "text-red-600 dark:text-red-400", label: "Cancelados" },
-  reprogramado: { bg: "#6366F1", text: "text-indigo-600 dark:text-indigo-400", label: "Reprogramados" },
-  species: ["#3B82F6", "#8B5CF6", "#EC4899", "#10B981", "#F59E0B"],
+  confirmado: { bg: "#10B981", text: "text-emerald-600", label: "Confirmados" },
+  solicitado: { bg: "#D48A1C", text: "text-[#D48A1C]", label: "Solicitados" },
+  cancelado: { bg: "#EF4444", text: "text-red-600", label: "Cancelados" },
+  reprogramado: { bg: "#AD5D1E", text: "text-[#AD5D1E]", label: "Reprogramados" },
+  species: ["#B84A14", "#D48A1C", "#C4832B", "#4B4118", "#A03813"],
 };
 
-/**
- * Componente de Tooltip personalizado para Recharts
- */
 const CustomChartTooltip = ({ active, payload, label, unit = "" }) => {
   if (!active || !payload || !payload.length) return null;
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95 transition-all">
-      <p className="mb-1 text-xs font-bold text-slate-700 dark:text-slate-200">{label || payload[0].name}</p>
-      <div className="flex items-center gap-2 text-xs font-semibold text-slate-900 dark:text-white">
+    <div className="rounded-lg border border-[#E6D8C3] bg-[#FFFDF9]/95 p-3 shadow-xl backdrop-blur-sm transition-all">
+      <p className="mb-1 text-xs font-bold text-[#473621]">{label || payload[0].name}</p>
+      <div className="flex items-center gap-2 text-xs font-semibold text-[#2C2115]">
         <span
           className="h-2.5 w-2.5 rounded-full"
           style={{ backgroundColor: payload[0].color || payload[0].fill }}
@@ -49,19 +45,16 @@ const CustomChartTooltip = ({ active, payload, label, unit = "" }) => {
   );
 };
 
-/**
- * Componente de Tarjeta de Métricas Rápidas (KPIs)
- */
 const StatCard = ({ title, value, subtitle, icon: Icon, colorClass }) => (
-  <Card className="transition-all duration-200 hover:shadow-md dark:border-slate-800">
+  <Card className="transition-all duration-200 hover:shadow-md border-[#E6D8C3] bg-[#FFFDF9]">
     <CardContent className="p-5">
       <div className="flex items-center justify-between space-x-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">{title}</p>
-          <h3 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{value}</h3>
-          {subtitle && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>}
+          <p className="text-xs font-medium uppercase tracking-wider text-[#6E4B2A]">{title}</p>
+          <h3 className="mt-1 text-2xl font-extrabold tracking-tight text-[#2C2115]">{value}</h3>
+          {subtitle && <p className="mt-0.5 text-xs text-[#6E4B2A]">{subtitle}</p>}
         </div>
-        <div className={`rounded-xl p-3 bg-slate-100 dark:bg-slate-800/80 ${colorClass}`}>
+        <div className={`rounded-xl p-3 bg-[#F5EFE4] border border-[#E6D8C3]/70 ${colorClass}`}>
           <Icon className="h-6 w-6" />
         </div>
       </div>
@@ -69,13 +62,10 @@ const StatCard = ({ title, value, subtitle, icon: Icon, colorClass }) => (
   </Card>
 );
 
-/**
- * Estado Vacío reutilizable para gráficos sin datos
- */
 const EmptyChartState = ({ message }) => (
-  <div className="flex h-64 w-full flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 p-6 text-center dark:border-slate-800">
-    <AlertCircle className="mb-2 h-8 w-8 text-slate-400" />
-    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{message}</p>
+  <div className="flex h-64 w-full flex-col items-center justify-center rounded-lg border border-dashed border-[#E6D8C3] bg-[#FAF6EF]/50 p-6 text-center">
+    <AlertCircle className="mb-2 h-8 w-8 text-[#6E4B2A]" />
+    <p className="text-sm font-medium text-[#473621]">{message}</p>
   </div>
 );
 
@@ -85,7 +75,6 @@ export function DashboardCharts({
   pharmacy = [],
   showPharmacy = true,
 }) {
-  // 1. Procesamiento Memoizado de Turnos
   const { appointmentData, totalAppointments, confirmationRate } = useMemo(() => {
     const safeAppointments = Array.isArray(appointments) ? appointments : [];
 
@@ -109,7 +98,6 @@ export function DashboardCharts({
     return { appointmentData: data, totalAppointments: total, confirmationRate: rate };
   }, [appointments]);
 
-  // 2. Procesamiento Memoizado de Distribución por Especie (Procesa datos reales de appointments o muestra fallback estructurado)
   const speciesData = useMemo(() => {
     const safeAppointments = Array.isArray(appointments) ? appointments : [];
 
@@ -121,7 +109,6 @@ export function DashboardCharts({
 
     const hasDynamicData = Object.keys(counts).length > 0;
 
-    // Si hay datos dinámicos los usa, de lo contrario proporciona estructura inicial consistente
     const sourceData = hasDynamicData
       ? Object.entries(counts).map(([name, value]) => ({ name, value }))
       : [
@@ -137,7 +124,6 @@ export function DashboardCharts({
     }));
   }, [appointments]);
 
-  // 3. Cálculos de Métrica para Vacunas y Farmacia (Aprovechamiento real de props)
   const vaccineStats = useMemo(() => {
     const safeVaccines = Array.isArray(vaccines) ? vaccines : [];
     const pending = safeVaccines.filter((v) => v?.status === "pendiente").length;
@@ -146,7 +132,7 @@ export function DashboardCharts({
 
   const pharmacyStats = useMemo(() => {
     const safePharmacy = Array.isArray(pharmacy) ? pharmacy : [];
-    const lowStock = safePharmacy.filter((item) => (item?.stock || 0) <= (item?.minStock || 5)).length;
+    const lowStock = safePharmacy.filter((item) => (item?.stock || 0) <= (item?.min_stock ?? item?.minStock ?? 5)).length;
     return { total: safePharmacy.length, lowStock };
   }, [pharmacy]);
 
@@ -159,14 +145,14 @@ export function DashboardCharts({
           value={totalAppointments}
           subtitle={`${confirmationRate}% de tasa de confirmación`}
           icon={Calendar}
-          colorClass="text-blue-600 dark:text-blue-400"
+          colorClass="text-[#B84A14]"
         />
         <StatCard
           title="Vacunas Aplicadas/Pendientes"
           value={vaccineStats.total}
           subtitle={`${vaccineStats.pending} pendientes este mes`}
           icon={Syringe}
-          colorClass="text-emerald-600 dark:text-emerald-400"
+          colorClass="text-emerald-600"
         />
         {showPharmacy && (
           <StatCard
@@ -174,7 +160,7 @@ export function DashboardCharts({
             value={pharmacyStats.lowStock}
             subtitle="Productos con bajo stock"
             icon={Pill}
-            colorClass={pharmacyStats.lowStock > 0 ? "text-amber-600 dark:text-amber-400" : "text-slate-600 dark:text-slate-400"}
+            colorClass={pharmacyStats.lowStock > 0 ? "text-[#D48A1C]" : "text-[#4B4118]"}
           />
         )}
         <StatCard
@@ -182,45 +168,44 @@ export function DashboardCharts({
           value={speciesData.reduce((acc, curr) => acc + curr.value, 0)}
           subtitle={`${speciesData.length} categorías activas`}
           icon={CheckCircle2}
-          colorClass="text-indigo-600 dark:text-indigo-400"
+          colorClass="text-[#AD5D1E]"
         />
       </div>
 
       {/* Sección Principal de Gráficos */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-
         {/* Gráfico 1: Estado de Turnos */}
-        <Card className="flex flex-col dark:border-slate-800">
+        <Card className="flex flex-col border-[#E6D8C3] bg-[#FFFDF9]">
           <CardHeader>
-            <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            <CardTitle className="text-lg font-bold text-[#2C2115]">
               Estado de Turnos Agendados
             </CardTitle>
-            <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+            <CardDescription className="text-xs text-[#6E4B2A]">
               Desglose en tiempo real de citas según su estado
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-1 pt-2">
-            {totalAppointments === 0 && appointmentData.every(d => d.cantidad === 0) ? (
+            {totalAppointments === 0 && appointmentData.every((d) => d.cantidad === 0) ? (
               <EmptyChartState message="No hay turnos registrados para mostrar" />
             ) : (
               <div className="h-72 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={appointmentData} margin={{ top: 15, right: 15, left: -20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-slate-200 dark:stroke-slate-800" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E6D8C3" />
                     <XAxis
                       dataKey="name"
                       tickLine={false}
                       axisLine={false}
-                      className="text-xs font-medium text-slate-600 dark:text-slate-400"
+                      tick={{ fill: "#473621", fontSize: 12, fontWeight: 500 }}
                       dy={8}
                     />
                     <YAxis
                       allowDecimals={false}
                       tickLine={false}
                       axisLine={false}
-                      className="text-xs font-medium text-slate-600 dark:text-slate-400"
+                      tick={{ fill: "#6E4B2A", fontSize: 12, fontWeight: 500 }}
                     />
-                    <Tooltip content={<CustomChartTooltip unit="turnos" />} cursor={{ fill: "rgba(0, 0, 0, 0.04)" }} />
+                    <Tooltip content={<CustomChartTooltip unit="turnos" />} cursor={{ fill: "rgba(184, 74, 20, 0.06)" }} />
                     <Bar dataKey="cantidad" radius={[6, 6, 0, 0]} maxBarSize={55}>
                       {appointmentData.map((entry, index) => (
                         <Cell key={`bar-cell-${index}`} fill={entry.fill} className="transition-opacity duration-200 hover:opacity-80" />
@@ -234,12 +219,12 @@ export function DashboardCharts({
         </Card>
 
         {/* Gráfico 2: Distribución por Especie */}
-        <Card className="flex flex-col dark:border-slate-800">
+        <Card className="flex flex-col border-[#E6D8C3] bg-[#FFFDF9]">
           <CardHeader>
-            <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            <CardTitle className="text-lg font-bold text-[#2C2115]">
               Distribución por Especie
             </CardTitle>
-            <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+            <CardDescription className="text-xs text-[#6E4B2A]">
               Proporción de pacientes atendidos en la clínica
             </CardDescription>
           </CardHeader>
@@ -271,15 +256,15 @@ export function DashboardCharts({
                 </div>
 
                 {/* Leyenda Personalizada e Interactiva */}
-                <div className="mt-4 flex w-full flex-wrap justify-center gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <div className="mt-4 flex w-full flex-wrap justify-center gap-3 border-t border-[#E6D8C3] pt-4">
                   {speciesData.map((item) => (
                     <div
                       key={item.name}
-                      className="flex items-center space-x-2 rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800/60 dark:text-slate-300"
+                      className="flex items-center space-x-2 rounded-full bg-[#F5EFE4] border border-[#E6D8C3] px-3 py-1 text-xs font-semibold text-[#473621]"
                     >
                       <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                       <span>{item.name}</span>
-                      <span className="text-slate-400 dark:text-slate-500">({item.value})</span>
+                      <span className="text-[#6E4B2A]">({item.value})</span>
                     </div>
                   ))}
                 </div>
@@ -287,7 +272,6 @@ export function DashboardCharts({
             )}
           </CardContent>
         </Card>
-
       </div>
     </div>
   );

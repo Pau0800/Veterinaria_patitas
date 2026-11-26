@@ -117,7 +117,7 @@ export function AdmissionModal({ isOpen, onClose, onSubmit }) {
           <p className="text-autumn-600 font-medium">
             No hay pacientes registrados en el sistema para ingresar a internación.
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-[#6E4B2A]">
             Registre una mascota antes de proceder con el alta de cama.
           </p>
           <div className="pt-4">

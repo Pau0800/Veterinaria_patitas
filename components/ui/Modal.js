@@ -144,7 +144,7 @@ export function Modal({
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         className={cn(
-          "bg-white w-full rounded-2xl shadow-autumn-lg border border-autumn-200/80 overflow-hidden flex flex-col max-h-[90vh] transition-all duration-200 animate-in zoom-in-95 focus:outline-none",
+          "bg-[#FFFDF9] w-full rounded-2xl shadow-autumn-lg border border-[#E6D8C3] overflow-hidden flex flex-col max-h-[90vh] transition-all duration-200 animate-in zoom-in-95 focus:outline-none",
           maxWidth,
           className
         )}
@@ -152,15 +152,15 @@ export function Modal({
       >
         {/* Cabecera */}
         {(title || onClose) && (
-          <div className="px-6 py-4 border-b border-autumn-100/80 flex items-center justify-between bg-autumn-50/50">
+          <div className="px-6 py-4 border-b border-[#E6D8C3] flex items-center justify-between bg-[#F5EFE4]/70">
             <div>
               {title && (
-                <h2 id={titleId} className="text-lg font-bold text-autumn-900 leading-snug">
+                <h2 id={titleId} className="text-lg font-bold text-[#2C2115] leading-snug">
                   {title}
                 </h2>
               )}
               {description && (
-                <p id={descriptionId} className="text-xs text-autumn-800/70 mt-0.5">
+                <p id={descriptionId} className="text-xs text-[#6E4B2A] mt-0.5">
                   {description}
                 </p>
               )}
@@ -171,7 +171,7 @@ export function Modal({
                 type="button"
                 onClick={onClose}
                 aria-label="Cerrar modal"
-                className="p-1.5 rounded-lg text-autumn-800/70 hover:text-autumn-900 hover:bg-autumn-200/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-autumn-500 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-[#6E4B2A] hover:text-[#2C2115] hover:bg-[#E6D8C3]/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B84A14] transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" aria-hidden="true" />
               </button>
@@ -180,11 +180,11 @@ export function Modal({
         )}
 
         {/* Cuerpo del Modal */}
-        <div className="p-6 overflow-y-auto flex-1 text-autumn-900">{children}</div>
+        <div className="p-6 overflow-y-auto flex-1 text-[#2C2115]">{children}</div>
 
         {/* Pie del Modal (Opcional) */}
         {footer && (
-          <div className="px-6 py-3.5 border-t border-autumn-100/80 bg-autumn-50/30 flex items-center justify-end gap-3">
+          <div className="px-6 py-3.5 border-t border-[#E6D8C3] bg-[#F5EFE4]/50 flex items-center justify-end gap-3">
             {footer}
           </div>
         )}

@@ -177,7 +177,7 @@ export default function GeminiChat() {
         aria-expanded={isOpen}
         aria-label={isOpen ? "Cerrar asistente Patitas IA" : "Abrir asistente Patitas IA"}
         className={`fixed bottom-5 right-5 z-[99999] flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-emerald-600 text-white shadow-xl hover:shadow-emerald-600/30 transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-emerald-400/50 ${
-          isOpen ? "rotate-90 bg-slate-800" : ""
+          isOpen ? "rotate-90 bg-[#2C2115]" : ""
         }`}
       >
         {isOpen ? (
@@ -195,7 +195,7 @@ export default function GeminiChat() {
 
       {/* VENTANA DE CHAT */}
       <div
-        className={`fixed bottom-22 right-4 sm:right-6 z-[99998] flex w-[calc(100vw-2rem)] sm:w-[390px] h-[540px] max-h-[80vh] flex-col overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl transition-all duration-300 ease-in-out ${
+        className={`fixed bottom-22 right-4 sm:right-6 z-[99998] flex w-[calc(100vw-2rem)] sm:w-[390px] h-[540px] max-h-[80vh] flex-col overflow-hidden rounded-3xl bg-[#FFFDF9] border border-[#E6D8C3] shadow-2xl transition-all duration-300 ease-in-out ${
           isOpen
             ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
             : "opacity-0 scale-95 translate-y-4 pointer-events-none"
@@ -245,7 +245,7 @@ export default function GeminiChat() {
         {/* ÁREA DE MENSAJES */}
         <div
           ref={chatContainerRef}
-          className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800"
+          className="flex-1 overflow-y-auto bg-[#FAF6EF] p-4 space-y-4 scrollbar-thin"
         >
           {messages.map((item) => {
             const isUser = item.role === "user";
@@ -255,7 +255,7 @@ export default function GeminiChat() {
                 className={`flex gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}
               >
                 {!isUser && (
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-xs font-bold mt-1">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold mt-1">
                     <Bot className="h-4 w-4" />
                   </div>
                 )}
@@ -266,21 +266,21 @@ export default function GeminiChat() {
                       isUser
                         ? "rounded-tr-xs bg-emerald-600 text-white"
                         : item.isError
-                        ? "rounded-tl-xs bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/50"
-                        : "rounded-tl-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-100 dark:border-slate-700/60"
+                        ? "rounded-tl-xs bg-red-50 text-red-700 border border-red-200"
+                        : "rounded-tl-xs bg-[#FFFDF9] text-[#2C2115] border border-[#E6D8C3]"
                     }`}
                   >
                     {item.content}
                   </div>
 
-                  <span className="mt-1 text-[10px] text-slate-400 dark:text-slate-500 px-1 flex items-center gap-1">
+                  <span className="mt-1 text-[10px] text-[#6E4B2A] px-1 flex items-center gap-1">
                     <Clock className="h-2.5 w-2.5" />
                     {item.timestamp}
                   </span>
                 </div>
 
                 {isUser && (
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-200 text-xs font-bold mt-1">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#F5EFE4] border border-[#E6D8C3] text-[#473621] text-xs font-bold mt-1">
                     <User className="h-4 w-4" />
                   </div>
                 )}
@@ -291,11 +291,11 @@ export default function GeminiChat() {
           {/* INDICADOR DE CARGA */}
           {loading && (
             <div className="flex items-center gap-2.5 justify-start">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
                 <Bot className="h-4 w-4" />
               </div>
-              <div className="rounded-2xl rounded-tl-xs bg-white dark:bg-slate-800 px-4 py-3 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center gap-1.5">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              <div className="rounded-2xl rounded-tl-xs bg-[#FFFDF9] px-4 py-3 border border-[#E6D8C3] shadow-sm flex items-center gap-1.5">
+                <span className="text-xs text-[#6E4B2A] font-medium">
                   Escribiendo
                 </span>
                 <span className="flex gap-1 items-center">
@@ -310,7 +310,7 @@ export default function GeminiChat() {
           {/* CHIPS DE SUGERENCIAS RÁPIDAS (Solo si hay 1 mensaje) */}
           {messages.length === 1 && !loading && (
             <div className="pt-2 space-y-2">
-              <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              <p className="text-[11px] font-medium text-[#6E4B2A] uppercase tracking-wider">
                 Preguntas frecuentes:
               </p>
               <div className="flex flex-col gap-1.5">
@@ -319,10 +319,10 @@ export default function GeminiChat() {
                     key={idx}
                     type="button"
                     onClick={() => sendMessage(promptText)}
-                    className="text-left text-xs bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-300 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/80 transition-colors duration-150 flex items-center justify-between group"
+                    className="text-left text-xs bg-[#FFFDF9] hover:bg-emerald-50 text-[#473621] p-2.5 rounded-xl border border-[#E6D8C3] transition-colors duration-150 flex items-center justify-between group"
                   >
                     <span>{promptText}</span>
-                    <Sparkles className="h-3 w-3 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                    <Sparkles className="h-3 w-3 text-[#AD5D1E] group-hover:text-emerald-500 transition-colors" />
                   </button>
                 ))}
               </div>
@@ -333,8 +333,8 @@ export default function GeminiChat() {
         </div>
 
         {/* ÁREA DE INPUT */}
-        <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 space-y-2">
-          <div className="flex items-end gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-transparent focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-slate-950 transition-all">
+        <footer className="border-t border-[#E6D8C3] bg-[#FFFDF9] p-3 space-y-2">
+          <div className="flex items-end gap-2 bg-[#F5EFE4] p-1.5 rounded-2xl border border-[#E6D8C3] focus-within:border-emerald-500 focus-within:bg-[#FFFDF9] transition-all">
             <textarea
               ref={textareaRef}
               rows={1}
@@ -343,7 +343,7 @@ export default function GeminiChat() {
               onKeyDown={handleKeyDown}
               disabled={loading}
               placeholder="Escribe tu consulta médica o inquietud..."
-              className="flex-1 bg-transparent px-2.5 py-1 text-xs sm:text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none resize-none max-h-28 disabled:opacity-50"
+              className="flex-1 bg-transparent px-2.5 py-1 text-xs sm:text-sm text-[#2C2115] placeholder-[#6E4B2A]/60 focus:outline-none resize-none max-h-28 disabled:opacity-50"
             />
 
             <button
@@ -357,9 +357,9 @@ export default function GeminiChat() {
             </button>
           </div>
 
-          <div className="flex items-center justify-between text-[10px] text-slate-400 px-1">
+          <div className="flex items-center justify-between text-[10px] text-[#6E4B2A] px-1">
             <span>Presiona Enter para enviar</span>
-            <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+            <span className="text-emerald-600 font-medium">
               Veterinaria Patitas 🐾
             </span>
           </div>

@@ -12,13 +12,13 @@ const Table = React.forwardRef(
       aria-label={ariaLabel}
       tabIndex={0}
       className={cn(
-        "relative w-full overflow-x-auto rounded-xl border border-autumn-200 shadow-autumn-sm bg-white focus:outline-none focus:ring-2 focus:ring-autumn-400 focus:ring-offset-1 transition-shadow",
+        "relative w-full overflow-x-auto rounded-xl border border-[#E6D8C3] shadow-autumn-sm bg-[#FFFDF9] focus:outline-none focus:ring-2 focus:ring-[#B84A14] focus:ring-offset-1 transition-shadow",
         containerClassName
       )}
     >
       <table
         ref={ref}
-        className={cn("w-full text-left text-sm text-autumn-900 border-collapse align-middle", className)}
+        className={cn("w-full text-left text-sm text-[#2C2115] border-collapse align-middle", className)}
         {...props}
       />
     </div>
@@ -33,7 +33,7 @@ const Thead = React.forwardRef(({ className, ...props }, ref) => (
   <thead
     ref={ref}
     className={cn(
-      "bg-autumn-50 border-b border-autumn-200 text-xs uppercase tracking-wider text-autumn-800/80 font-semibold sticky top-0 z-10",
+      "bg-[#F5EFE4] border-b border-[#E6D8C3] text-xs uppercase tracking-wider text-[#473621] font-semibold sticky top-0 z-10",
       className
     )}
     {...props}
@@ -47,7 +47,7 @@ Thead.displayName = "Thead";
 const Tbody = React.forwardRef(({ className, ...props }, ref) => (
   <tbody
     ref={ref}
-    className={cn("divide-y divide-autumn-100 bg-white [&_tr:last-child]:border-0", className)}
+    className={cn("divide-y divide-[#E6D8C3]/70 bg-[#FFFDF9] [&_tr:last-child]:border-0", className)}
     {...props}
   />
 ));

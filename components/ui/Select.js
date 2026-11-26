@@ -78,7 +78,7 @@ export const Select = forwardRef(function Select(
         <label
           htmlFor={selectId}
           className={cn(
-            "text-xs font-semibold text-autumn-900 tracking-wide uppercase flex items-center justify-between select-none",
+            "text-xs font-semibold text-[#473621] tracking-wide uppercase flex items-center justify-between select-none",
             disabled && "opacity-60 cursor-not-allowed"
           )}
         >
@@ -100,14 +100,14 @@ export const Select = forwardRef(function Select(
           aria-describedby={describedBy || undefined}
           className={cn(
             // Reset de apariencia nativa y estilos base
-            "appearance-none w-full px-3.5 py-2.5 pr-10 text-sm bg-white border border-autumn-300 rounded-lg text-autumn-900",
+            "appearance-none w-full px-3.5 py-2.5 pr-10 text-sm bg-[#FFFDF9] border border-[#E6D8C3] rounded-lg text-[#2C2115]",
             "shadow-sm transition-all duration-150 ease-in-out cursor-pointer",
             // Focus state con anillo de accesibilidad
-            "focus:outline-none focus:ring-2 focus:ring-autumn-500/20 focus:border-autumn-500",
+            "focus:outline-none focus:ring-2 focus:ring-[#B84A14]/25 focus:border-[#B84A14]",
             // Disabled state
-            "disabled:bg-autumn-50 disabled:text-autumn-400 disabled:border-autumn-200 disabled:cursor-not-allowed disabled:shadow-none",
+            "disabled:bg-[#F5EFE4] disabled:text-[#6E4B2A]/60 disabled:border-[#E6D8C3] disabled:cursor-not-allowed disabled:shadow-none",
             // Hover state (cuando no está deshabilitado)
-            "hover:border-autumn-400 disabled:hover:border-autumn-200",
+            "hover:border-[#C4832B] disabled:hover:border-[#E6D8C3]",
             // Modificador de error
             error && "border-red-500 focus:ring-red-500/20 focus:border-red-500 hover:border-red-600 text-red-950",
             className

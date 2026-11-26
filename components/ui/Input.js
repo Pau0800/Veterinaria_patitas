@@ -13,7 +13,7 @@ const FieldWrapper = ({ id, label, error, helperText, children, containerClassNa
       {label && (
         <label
           htmlFor={id}
-          className="text-xs font-semibold text-autumn-900 tracking-wide uppercase cursor-pointer select-none"
+          className="text-xs font-semibold text-[#473621] tracking-wide uppercase cursor-pointer select-none"
         >
           {label}
         </label>
@@ -23,7 +23,7 @@ const FieldWrapper = ({ id, label, error, helperText, children, containerClassNa
 
       {/* Mensaje de Ayuda */}
       {helperText && !error && (
-        <p id={helperId} className="text-xs text-autumn-800/60 leading-normal">
+        <p id={helperId} className="text-xs text-[#6E4B2A]/80 leading-normal">
           {helperText}
         </p>
       )}
@@ -93,9 +93,9 @@ export const Input = React.forwardRef(function Input(
               aria-invalid={Boolean(error)}
               aria-describedby={describedBy || undefined}
               className={cn(
-                "w-full px-3.5 py-2 text-sm bg-white border border-autumn-300 rounded-lg text-autumn-900 placeholder:text-autumn-800/40 transition-all duration-200",
-                "focus:outline-none focus:ring-2 focus:ring-autumn-500 focus:border-transparent",
-                "disabled:bg-autumn-50 disabled:text-autumn-800/50 disabled:border-autumn-200 disabled:cursor-not-allowed",
+                "w-full px-3.5 py-2 text-sm bg-[#FFFDF9] border border-[#E6D8C3] rounded-lg text-[#2C2115] placeholder:text-[#6E4B2A]/50 transition-all duration-200",
+                "focus:outline-none focus:ring-2 focus:ring-[#B84A14] focus:border-transparent",
+                "disabled:bg-[#F5EFE4] disabled:text-[#6E4B2A]/60 disabled:border-[#E6D8C3] disabled:cursor-not-allowed",
                 Icon && "pl-10",
                 EndIcon && "pr-10",
                 error && "border-red-500 focus:ring-red-500",
@@ -173,9 +173,9 @@ export const Textarea = React.forwardRef(function Textarea(
             aria-invalid={Boolean(error)}
             aria-describedby={describedBy || undefined}
             className={cn(
-              "w-full px-3.5 py-2 text-sm bg-white border border-autumn-300 rounded-lg text-autumn-900 placeholder:text-autumn-800/40 transition-all duration-200 resize-y min-h-[80px]",
-              "focus:outline-none focus:ring-2 focus:ring-autumn-500 focus:border-transparent",
-              "disabled:bg-autumn-50 disabled:text-autumn-800/50 disabled:border-autumn-200 disabled:cursor-not-allowed",
+              "w-full px-3.5 py-2 text-sm bg-[#FFFDF9] border border-[#E6D8C3] rounded-lg text-[#2C2115] placeholder:text-[#6E4B2A]/50 transition-all duration-200 resize-y min-h-[80px]",
+              "focus:outline-none focus:ring-2 focus:ring-[#B84A14] focus:border-transparent",
+              "disabled:bg-[#F5EFE4] disabled:text-[#6E4B2A]/60 disabled:border-[#E6D8C3] disabled:cursor-not-allowed",
               error && "border-red-500 focus:ring-red-500",
               className
             )}

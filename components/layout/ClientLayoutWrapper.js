@@ -89,11 +89,11 @@ export function ClientLayoutWrapper({ children }) {
   }
 
   return (
-    <div className="flex flex-1 min-h-screen w-full relative bg-autumn-50/50 text-gray-900 antialiased selection:bg-autumn-200 selection:text-autumn-900">
+    <div className="flex flex-1 min-h-screen w-full relative bg-[#FAF6EF] text-[#2C2115] antialiased selection:bg-[#E6D8C3] selection:text-[#2C2115]">
       {/* Backdrop para dispositivos móviles con animación de opacidad */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-gray-900/50 backdrop-blur-sm lg:hidden transition-opacity duration-300 ease-in-out"
+          className="fixed inset-0 z-40 bg-[#2C2115]/55 backdrop-blur-sm lg:hidden transition-opacity duration-300 ease-in-out"
           onClick={closeSidebar}
           aria-hidden="true"
         />
